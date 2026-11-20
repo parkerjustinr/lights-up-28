@@ -34,7 +34,10 @@
     return i < 0 ? { first: s, last: "" } : { first: s.slice(0, i), last: s.slice(i + 1) };
   }
   // Unsplash sizing: photos are stored as bare URLs in the data and sized here.
-  function img(url, w, h) { return url ? url + "?w=" + w + "&h=" + h + "&fit=crop&crop=faces&auto=format&q=70" : ""; }
+  // facearea + crop=faces centers the face in every crop; facepad sets how much head and shoulders show.
+  function img(url, w, h, pad) {
+    return url ? url + "?w=" + w + "&h=" + h + "&fit=facearea&facepad=" + (pad || 2.6) + "&crop=faces&auto=format&q=70" : "";
+  }
   function imgLoading(eager) { return SHOT || eager ? "eager" : "lazy"; }
 
   // ---------- time zones ----------
@@ -316,7 +319,7 @@
             var p = byId(D.speakers.items, id);
             if (!p) return "";
             return '<a class="s-sp" href="#speaker-' + id + '">' +
-              (p.photo ? '<img src="' + esc(img(p.photo, 64, 64)) + '" alt="" width="32" height="32" loading="' + imgLoading(false) + '">' : "") +
+              (p.photo ? '<img src="' + esc(img(p.photo, 64, 64, 2)) + '" alt="" width="32" height="32" loading="' + imgLoading(false) + '">' : "") +
               '<span><span class="s-sp-name">' + esc(p.name) + '</span><span class="s-sp-role">' + esc(p.role) + ", " + esc(p.company) + "</span></span></a>";
           }).filter(Boolean).join("");
           var cls = "session track-" + trackIndex(x.track) + (x.cue ? " is-keynote" : "") + (tr ? "" : " is-common");
@@ -730,7 +733,7 @@
         var s = Math.max(pw / photo.width, ph / photo.height), sw = pw / s, sh = ph / s;
         var off = document.createElement("canvas"); off.width = pw; off.height = ph;
         var o2 = off.getContext("2d");
-        o2.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 4, sw, sh, 0, 0, pw, ph);
+        o2.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 2, sw, sh, 0, 0, pw, ph);
         try {
           var data = o2.getImageData(0, 0, pw, ph), d = data.data, hc = hexRgb(host), ic = hexRgb(ink);
           for (var i = 0; i < d.length; i += 4) {
