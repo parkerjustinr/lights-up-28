@@ -458,10 +458,19 @@ html:not([data-shot]) .drawer-x:hover { background: var(--paper); color: var(--i
 [aria-invalid="true"] { outline: 3px solid var(--paper); outline-offset: 2px; }
 .dr-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin-top: 4px; }
 .dr-photo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
-.dr-thumb { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: var(--host); border: 2px solid var(--paper); display: grid; place-items: center; flex: 0 0 auto; }
-.dr-thumb img, .dr-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.dr-thumb .qf { position: static; height: 38px; width: auto; aspect-ratio: 28 / 60; }
-.wu-video { transform: scaleX(-1); filter: grayscale(1) contrast(1.1); mix-blend-mode: multiply; }
+.dr-thumb { width: 96px; height: 96px; overflow: hidden; background: var(--host); border: 2px solid var(--paper); display: grid; place-items: center; flex: 0 0 auto; }
+.dr-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dr-thumb .qf { position: static; height: 64px; width: auto; aspect-ratio: 28 / 60; }
+/* Camera panel: a 4:5 live preview, mirrored like a selfie, in an ink frame (outlined so it shows on the ink drawer). */
+.cam-panel { flex-basis: 100%; width: 100%; display: grid; gap: 10px; justify-items: start; margin-top: 4px; }
+@media (max-width: 759px) { .dr-photo { flex-basis: 100%; } }
+.cam-frame { position: relative; width: min(100%, 360px); aspect-ratio: 4 / 5; background: var(--ink); border: 6px solid var(--ink); outline: 2px solid var(--paper); outline-offset: 0; overflow: hidden; }
+.cam-video, .cam-shot { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+.cam-video { transform: scaleX(-1); }
+.cam-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.cam-go { background: var(--host); border-color: var(--host); color: var(--ink); min-width: 120px; }
+html:not([data-shot]) .drawer .cam-go:hover { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+@media (min-width: 760px) { .cam-frame { width: 280px; } }
 .wu-status:empty { display: none; }
 .wu-status { margin: 0; font-weight: 700; flex-basis: 100%; }
 .dr-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }

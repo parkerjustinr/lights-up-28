@@ -776,7 +776,10 @@
         "bad": "That file didn't open as an image. Try another one.",
         "labelEmpty": "No photo yet",
         "labelPhoto": "Your photo",
-        "labelLive": "Camera preview"
+        "labelLive": "Camera preview",
+        "use": "Use photo",
+        "retake": "Retake",
+        "labelShot": "Your photo, before you use it"
       },
       "join": "Join the queue",
       "calendar": "Add to calendar"

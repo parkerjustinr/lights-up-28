@@ -1158,9 +1158,15 @@
             '<button type="button" class="linkish" id="wu-take">' + esc(ph.take) + "</button>" +
             '<button type="button" class="linkish" id="wu-upload">' + esc(ph.upload) + "</button>" +
             '<input type="file" id="wu-file" accept="image/*" hidden>' +
-            '<button type="button" class="linkish" id="wu-snap" hidden>' + esc(ph.snap) + "</button>" +
-            '<button type="button" class="linkish" id="wu-cancel" hidden>' + esc(ph.cancel) + "</button>" +
-            '<p class="wu-status" id="wu-status" role="status"></p></div>' +
+            '<p class="wu-status" id="wu-status" role="status"></p>' +
+            // Camera panel: a 4:5 live preview, mirrored like a selfie, then a look at the shot before using it.
+            '<div class="cam-panel" id="cam-panel" hidden><div class="cam-frame">' +
+              '<video class="cam-video" id="cam-video" muted playsinline autoplay aria-label="' + esc(ph.labelLive) + '"></video>' +
+              '<canvas class="cam-shot" id="cam-shot" role="img" aria-label="' + esc(ph.labelShot) + '" hidden></canvas></div>' +
+              '<div class="cam-actions"><button type="button" class="btn cam-go" id="wu-snap">' + esc(ph.snap) + "</button>" +
+                '<button type="button" class="linkish" id="wu-cancel">' + esc(ph.cancel) + "</button>" +
+                '<button type="button" class="btn cam-go" id="cam-use" hidden>' + esc(ph.use) + "</button>" +
+                '<button type="button" class="linkish" id="cam-retake" hidden>' + esc(ph.retake) + "</button></div></div></div>" +
           '<div class="dr-submit"><button type="submit" class="btn dr-go" id="reg-submit">' + esc(dr.submit) + "</button>" +
             '<p class="dr-demo">' + esc(dr.demo) + "</p></div>" +
         "</div>" +
@@ -1205,6 +1211,7 @@
     var d = $("reg-drawer");
     if (!d || d.hidden) return;
     stopCamera();
+    closeCam();
     d.hidden = true;
     setTriggersExpanded(false);
     if (DR.trigger && document.contains(DR.trigger)) DR.trigger.focus({ preventScroll: true });
@@ -1242,6 +1249,7 @@
     });
     $("reg-again").addEventListener("click", function () {
       stopCamera();
+      closeCam();
       WU.src = null;
       $("reg-form").reset();
       Array.prototype.forEach.call($("reg-form").querySelectorAll("[aria-invalid]"), function (el) { el.removeAttribute("aria-invalid"); });
@@ -1313,14 +1321,33 @@
   // ---------- registrant photo: camera or upload, kept in memory only ----------
   var WU = { stream: null, src: null, observer: null };
   var SRC_W = 960, SRC_H = 1200;
+  // Stops every camera track. A live panel closes; a shot waiting for "Use photo" stays on screen.
   function stopCamera() {
     if (WU.stream) { WU.stream.getTracks().forEach(function (t) { t.stop(); }); WU.stream = null; }
-    var v = document.querySelector("#wu-slot video");
-    if (v) { v.srcObject = null; v.remove(); }
-    ["wu-snap", "wu-cancel"].forEach(function (id) { if ($(id)) $(id).hidden = true; });
+    var v = $("cam-video");
+    if (v) v.srcObject = null;
+    if (!WU.pending) closeCam();
+  }
+  function closeCam() {
+    WU.pending = null;
+    var panel = $("cam-panel");
+    if (!panel) return;
+    panel.hidden = true;
     if ($("wu-take")) $("wu-take").hidden = false;
     if ($("wu-upload")) $("wu-upload").hidden = false;
-    if ($("wu-slot") && !$("wu-slot").querySelector("img,svg")) resetThumb();
+  }
+  // Keep the Register button, and the panel's own buttons, on screen when the panel opens or changes.
+  function keepRegisterInView() {
+    var btn = $("reg-submit"), acts = document.querySelector("#cam-panel:not([hidden]) .cam-actions");
+    if (!btn) return;
+    var bottom = Math.max(btn.getBoundingClientRect().bottom, acts ? acts.getBoundingClientRect().bottom : 0);
+    var over = bottom + 12 - window.innerHeight;
+    if (over > 0) window.scrollBy({ top: over, behavior: smoothOK() ? "smooth" : "instant" });
+  }
+  function camMode(review) {
+    $("cam-video").hidden = review; $("cam-shot").hidden = !review;
+    $("wu-snap").hidden = review; $("wu-cancel").hidden = review;
+    $("cam-use").hidden = !review; $("cam-retake").hidden = !review;
   }
   // Ink in the shadows, host in the lights: the same duotone as the wall photos.
   function duotone(ctx, w, h) {
@@ -1351,10 +1378,10 @@
   function showPhoto(src) {
     var slot = $("wu-slot"), p = D.registration.card.photo;
     WU.src = src;
-    var S = 56 * dpr(), cv = document.createElement("canvas"), side = src.width * 0.7;
+    var S = 96 * dpr(), cv = document.createElement("canvas"), side = src.width * 0.8;
     cv.width = cv.height = S;
     var ctx = cv.getContext("2d");
-    ctx.drawImage(src, (src.width - side) / 2, Math.max(0, src.height * 0.38 - side / 2), side, side, 0, 0, S, S);
+    ctx.drawImage(src, (src.width - side) / 2, Math.max(0, src.height * 0.4 - side / 2), side, side, 0, 0, S, S);
     duotone(ctx, S, S);
     slot.innerHTML = '<img alt="" src="' + cv.toDataURL("image/png") + '">';
     slot.setAttribute("aria-label", p.labelPhoto);
@@ -1365,37 +1392,52 @@
     var p = D.registration.card.photo, slot = $("wu-slot");
     if (!slot) return;
     var canCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-    $("wu-take").addEventListener("click", function () {
+    function startCam() {
       wuStatus("");
       if (!canCam) { wuStatus(p.none); $("wu-take").hidden = true; return; }
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false }).then(function (stream) {
-        stopCamera();
-        WU.stream = stream;
-        var v = document.createElement("video");
-        v.className = "wu-video"; v.muted = true; v.playsInline = true; v.autoplay = true;
-        v.setAttribute("playsinline", ""); v.srcObject = stream;
-        slot.innerHTML = ""; slot.appendChild(v);
-        slot.setAttribute("aria-label", p.labelLive);
-        v.play().catch(function () { /* autoplay may need the click; the stream still shows */ });
-        $("wu-take").hidden = true; $("wu-upload").hidden = true; $("wu-snap").hidden = false; $("wu-cancel").hidden = false;
-        $("wu-snap").focus();
+        if (WU.stream) WU.stream.getTracks().forEach(function (t) { t.stop(); });
+        WU.stream = stream; WU.pending = null;
+        var v = $("cam-video");
+        v.muted = true; v.playsInline = true; v.srcObject = stream;
+        v.play().catch(function () { /* autoplay may need the tap; the stream still shows */ });
+        $("cam-panel").hidden = false;
+        camMode(false);
+        $("wu-take").hidden = true; $("wu-upload").hidden = true;
+        $("wu-snap").focus({ preventScroll: true });
+        keepRegisterInView();
       }).catch(function (err) {
         var denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
         wuStatus(denied ? p.denied : p.none);
         $("wu-take").hidden = true;
       });
-    });
+    }
+    $("wu-take").addEventListener("click", startCam);
+    $("cam-retake").addEventListener("click", function () { WU.pending = null; startCam(); });
     $("wu-snap").addEventListener("click", function () {
-      var v = document.querySelector("#wu-slot video");
+      var v = $("cam-video");
       if (!v || !v.videoWidth) return;
       var src = toSource(v, v.videoWidth, v.videoHeight, true);
-      stopCamera();
-      showPhoto(src);
+      WU.pending = src;
+      if (WU.stream) { WU.stream.getTracks().forEach(function (t) { t.stop(); }); WU.stream = null; }
+      v.srcObject = null;
+      // Show the shot at the panel's size, in its own colors, before it is used.
+      var c = $("cam-shot"), box = c.parentNode;
+      c.width = Math.round(box.clientWidth * dpr()); c.height = Math.round(box.clientHeight * dpr());
+      c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+      camMode(true);
+      $("cam-use").focus({ preventScroll: true });
+      keepRegisterInView();
+    });
+    $("cam-use").addEventListener("click", function () {
+      var src = WU.pending;
+      closeCam();
+      if (src) showPhoto(src);
       $("wu-take").focus();
     });
     $("wu-cancel").addEventListener("click", function () {
       stopCamera();
-      if (WU.src) showPhoto(WU.src); else resetThumb();
+      closeCam();
       $("wu-take").focus();
     });
     $("wu-upload").addEventListener("click", function () { $("wu-file").click(); });
