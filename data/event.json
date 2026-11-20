@@ -145,14 +145,15 @@
         "name": "Lars Ekholm",
         "role": "Head of Field Service",
         "company": "Corvan Lifts, Oslo",
-        "photo": "https://images.unsplash.com/photo-1504257432389-52343af06ae3"
+        "photo": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
       },
       {
         "id": "sp5",
         "name": "Siobhan Kerr",
         "role": "COO",
         "company": "Fernhill Brewing, Dublin",
-        "photo": "https://images.unsplash.com/photo-1628890923662-2cb23c2e0cfe"
+        "photo": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?rect=1206,0,2860,2600",
+        "photoEye": 0.4
       },
       {
         "id": "sp6",

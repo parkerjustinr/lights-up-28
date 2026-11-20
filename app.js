@@ -35,24 +35,36 @@
   }
   // Unsplash sizing: photos are stored as bare URLs in the data and sized here.
   // facearea + crop=faces centers the face in every crop; facepad sets how much head and shoulders show.
+  // A photo URL that already carries ?rect= (a hand-set crop, for originals with little headroom) keeps
+  // that crop and is only fitted to size.
   function img(url, w, h, pad) {
-    return url ? url + "?w=" + w + "&h=" + h + "&fit=facearea&facepad=" + (pad || 2.6) + "&crop=faces&auto=format&q=70" : "";
+    if (!url) return "";
+    // Small thumbnails go back to the face crop, so the face fills them.
+    if (url.indexOf("?") > -1 && w <= 96) url = url.split("?")[0];
+    else if (url.indexOf("?") > -1) return url + "&w=" + w + "&h=" + h + "&fit=crop&crop=faces&auto=format&q=70";
+    return url + "?w=" + w + "&h=" + h + "&fit=facearea&facepad=" + (pad || 2.6) + "&crop=faces&auto=format&q=70";
   }
   // Wall photos: a little more zoomed out than the cards, so the CSS framing has headroom to work with.
   var WALL_W = 760, WALL_H = 900, EYE = 0.465, EYE_AT = 0.38;
-  function wallPhoto(url) { return img(url, WALL_W, WALL_H, 4.6); }
+  // Wall photo size: the standard 760x900, or the hand-set crop's own shape when the URL carries ?rect=.
+  function wallSize(url) {
+    var m = /rect=\d+,\d+,(\d+),(\d+)/.exec(url || "");
+    return m ? { w: 900, h: Math.round(900 * (+m[2]) / (+m[1])) } : { w: WALL_W, h: WALL_H };
+  }
+  function wallPhoto(url) { var z = wallSize(url); return img(url, z.w, z.h, 4.6); }
   // Box for a wall photo inside a W x H frame: eyes at 38% of the frame, frame fully covered.
-  function wallFrame(W, H) {
-    var ar = WALL_H / WALL_W;
-    var ih = Math.max(W * ar, (EYE_AT * H) / EYE, ((1 - EYE_AT) * H) / (1 - EYE));
+  function wallFrame(W, H, eye, ar) {
+    ar = ar || WALL_H / WALL_W;
+    var E = eye || EYE;
+    var ih = Math.max(W * ar, (EYE_AT * H) / E, ((1 - EYE_AT) * H) / (1 - E));
     var iw = ih / ar;
-    return { w: iw, h: ih, x: (W - iw) / 2, y: EYE_AT * H - EYE * ih };
+    return { w: iw, h: ih, x: (W - iw) / 2, y: EYE_AT * H - E * ih };
   }
   function frameWallPhotos() {
     var box = document.querySelector("#wall .stage-photo");
     if (!box) return;
-    var f = wallFrame(box.clientWidth, box.clientHeight);
     Array.prototype.forEach.call(box.querySelectorAll("img.wall-shot"), function (im) {
+      var f = wallFrame(box.clientWidth, box.clientHeight, parseFloat(im.getAttribute("data-eye")) || 0, (+im.getAttribute("height")) / (+im.getAttribute("width")));
       im.style.width = f.w + "px"; im.style.height = f.h + "px"; im.style.left = f.x + "px"; im.style.top = f.y + "px";
     });
   }
@@ -173,7 +185,8 @@
     var c = CUES[state.cue];
     var photos = CUES.map(function (x, i) {
       // All six photos are in the DOM and loaded eagerly, so a cut never shows a blank.
-      return '<img src="' + esc(wallPhoto(x.sp.photo)) + '" alt="" class="wall-shot" width="760" height="900" loading="eager" decoding="sync" data-cue="' + i + '"' + (i === state.cue ? "" : " hidden") + ">";
+      var z = wallSize(x.sp.photo);
+      return '<img src="' + esc(wallPhoto(x.sp.photo)) + '" alt="" class="wall-shot" width="' + z.w + '" height="' + z.h + '" loading="eager" decoding="sync"' + (x.sp.photoEye ? ' data-eye="' + x.sp.photoEye + '"' : "") + ' data-cue="' + i + '"' + (i === state.cue ? "" : " hidden") + ">";
     }).join("");
     var strip = CUES.map(function (x, i) {
       return '<li><button type="button" class="cue-btn" data-cue="' + i + '"><span class="cue-q">' + esc(x.cue) + '</span><span class="cue-state" aria-hidden="true"></span></button></li>';
@@ -1272,7 +1285,7 @@
           var s = Math.max(pw / photo.width, ph / photo.height), sw = pw / s, sh = ph / s;
           o2.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 2, sw, sh, 0, 0, pw, ph);
         } else {
-          var fr = wallFrame(pw, ph); // same framing as the wall
+          var fr = wallFrame(pw, ph, o.eye, photo.height / photo.width); // same framing as the wall
           o2.drawImage(photo, fr.x, fr.y, fr.w, fr.h);
         }
         try {
