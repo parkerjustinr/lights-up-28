@@ -232,16 +232,6 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
 .about-copy p { max-width: 58ch; font-size: 1.15rem; margin: 0; }
 @media (min-width: 880px) { .about-copy { margin-left: 42%; } }
 
-/* ---------- equator: one huge latitude on a sky field ---------- */
-.sec-equator { background: var(--booth); }
-.eq-lat { font-family: var(--display); font-weight: 800; font-stretch: 112%; font-size: clamp(4.6rem, 20vw, 17rem); line-height: 0.85; letter-spacing: -0.02em; margin: 0 0 24px; white-space: nowrap; }
-.eq-map { position: relative; margin: 0 0 22px; padding-top: 26px; border-bottom: 0; }
-.eq-line { margin: 0; border-top: 2px solid var(--ink); position: relative; }
-.eq-line span { position: absolute; left: 0; bottom: 6px; font-family: var(--mono); font-weight: 500; font-size: 0.9rem; }
-.eq-dot { margin: 0; padding: 30px 0 0 18%; display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-weight: 500; font-size: 0.9rem; }
-.eq-dot .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ink); flex: 0 0 auto; }
-.eq-text { font-size: 1.2rem; max-width: 48ch; margin: 0; }
-
 /* ---------- speakers: a cue sheet of six, then The Booth ---------- */
 .sp-group { font-family: var(--mono); font-weight: 500; font-size: 1rem; margin: 28px 0 12px; padding-top: 10px; border-top: var(--rule); }
 .sp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 14px; }
@@ -325,7 +315,7 @@ html:not([data-shot]) .day-tab:hover:not([aria-selected="true"]) { background: v
   .sec-tickets .wrap > .lede { grid-column: 2; margin-bottom: 26px; max-width: 46ch; }
 }
 .matrix-wrap { border: 0; padding: 0; margin: 0 0 20px; min-width: 0; }
-.matrix-layout { display: grid; gap: 20px; }
+.matrix-layout { display: grid; gap: 20px; max-width: 920px; }
 .matrix { width: 100%; border-collapse: collapse; }
 .m-pick { display: grid; gap: 2px; cursor: pointer; padding: 12px; border: var(--rule); height: 100%; text-align: left; }
 .m-pick input { position: absolute; opacity: 0; width: 1px; height: 1px; }
@@ -338,20 +328,16 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .m-label { appearance: none; background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: inherit; text-align: left; cursor: pointer; display: flex; gap: 8px; align-items: baseline; width: 100%; }
 .m-more { margin-left: auto; font-weight: 400; }
 .m-label[aria-expanded="true"] .m-more { transform: rotate(45deg); }
-.m-row.is-hot th { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.m-row.is-open th .m-label { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .yes { color: var(--ink); display: inline-flex; }
 .yes svg { width: 20px; height: 20px; }
 .no { color: var(--muted); }
 .val { font-weight: 700; font-size: 0.95rem; }
 .m-row td.is-sel { background: var(--host); color: var(--on-host); }
 .m-row td.is-sel .yes, .m-row td.is-sel .no { color: var(--on-host); }
-.m-detail td { padding: 0 0 12px; }
-.pv { background: var(--booth); padding: 14px; }
-.pv-title { font-family: var(--display); font-weight: 800; font-size: 1.2rem; margin-bottom: 8px; }
-.pv-list li { padding: 4px 0; border-top: 1px solid var(--ink); font-size: 0.95rem; }
-.pv-list .t { font-family: var(--mono); font-weight: 500; font-size: 0.85rem; }
-.pv-incl { margin: 10px 0 0; font-size: 0.9rem; }
-.preview { display: none; }
+.m-detail td { padding: 0 0 10px; }
+/* The row's one sentence, opened by its "+": a sky band right under the row. */
+.m-detail-text { margin: 0; background: var(--booth); padding: 10px 12px; text-align: left; }
 .matrix-cta { display: grid; gap: 12px; justify-items: start; }
 .matrix-foot { margin: 0; font-size: 1.05rem; color: var(--ink); font-weight: 700; }
 
@@ -372,13 +358,9 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
   .m-detail td { display: block; }
 }
 @media (min-width: 880px) {
-  .matrix-layout { grid-template-columns: 1fr 300px; align-items: start; }
-  /* Not sticky: the preview sits beside the table and stays put. */
-  .preview { display: block; background: var(--booth); padding: 16px; min-height: 220px; }
   .matrix thead th { padding: 0; vertical-align: top; width: 22%; height: 1px; }
   .m-row th, .m-row td { border-top: 1px solid var(--ink); padding: 12px 8px; }
   .m-row td { text-align: center; }
-  .m-detail { display: none; }
 }
 
 /* ---------- sponsors (off) ---------- */
@@ -387,6 +369,16 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .sponsor-list { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; }
 .sponsor-list img { max-height: 48px; width: auto; }
 .wordmark { font-family: var(--display); font-weight: 800; font-size: 1.4rem; }
+
+/* ---------- Getting there: the equator strip, a slim sky band above the transit rows ---------- */
+.eq-strip { background: var(--booth); padding: 14px 16px 16px; margin: 0 0 28px; scroll-margin-top: calc(var(--bar) + 12px); }
+.eq-map { margin: 0 0 10px; padding-top: 22px; }
+.eq-line { margin: 0; border-top: 2px solid var(--ink); position: relative; }
+.eq-line span { position: absolute; left: 0; bottom: 5px; font-family: var(--mono); font-weight: 500; font-size: 0.9rem; }
+.eq-dot { margin: 0; padding: 18px 0 0 12%; display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-weight: 500; font-size: 0.9rem; }
+.eq-dot .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ink); flex: 0 0 auto; }
+.eq-text { margin: 0; font-weight: 700; }
+@media (max-width: 479px) { .eq-dot { padding-left: 0; } }
 
 /* ---------- Getting there: the shuttle as one ink block beside a ruled list ---------- */
 .venue-layout { display: grid; gap: 28px; }

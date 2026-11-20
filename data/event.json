@@ -21,12 +21,6 @@
       "on": true
     },
     {
-      "id": "equator",
-      "label": "Equator",
-      "on": true,
-      "nav": false
-    },
-    {
       "id": "speakers",
       "label": "Speakers",
       "on": true
@@ -106,13 +100,6 @@
       "Lights Up '28 is Tarnell's free customer conference, and every main-stage keynote is given by a customer who runs something live."
     ]
   },
-  "equator": {
-    "heading": "0° 11′ S",
-    "headingLabel": "0 degrees 11 minutes south",
-    "lineLabel": "0° Equator",
-    "dotLabel": "Nave Carolina",
-    "sentence": "Nave Carolina sits next to La Carolina station, about 21 km south of the equator and 2,850 m up."
-  },
   "tracks": [
     {
       "id": "main",
@@ -136,42 +123,42 @@
         "id": "sp1",
         "name": "Elena Vásquez",
         "role": "VP Operations",
-        "company": "Northline Transit",
+        "company": "Northline Transit, Santiago",
         "photo": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604"
       },
       {
         "id": "sp2",
         "name": "Arjun Mehta",
         "role": "Facilities Lead",
-        "company": "Kestow Health",
+        "company": "Kestow Health, Bengaluru",
         "photo": "https://images.unsplash.com/photo-1629425733761-caae3b5f2e50"
       },
       {
         "id": "sp3",
         "name": "Adaeze Nwosu",
         "role": "Production Manager",
-        "company": "Wexley Arena",
+        "company": "Wexley Arena, Lagos",
         "photo": "https://images.unsplash.com/photo-1573497161161-c3e73707e25c"
       },
       {
         "id": "sp4",
         "name": "Lars Ekholm",
         "role": "Head of Field Service",
-        "company": "Corvan Lifts",
+        "company": "Corvan Lifts, Oslo",
         "photo": "https://images.unsplash.com/photo-1504257432389-52343af06ae3"
       },
       {
         "id": "sp5",
         "name": "Siobhan Kerr",
         "role": "COO",
-        "company": "Fernhill Brewing",
+        "company": "Fernhill Brewing, Dublin",
         "photo": "https://images.unsplash.com/photo-1628890923662-2cb23c2e0cfe"
       },
       {
         "id": "sp6",
         "name": "Callum Reid",
         "role": "Operations Director",
-        "company": "Saltmarsh Ferries",
+        "company": "Saltmarsh Ferries, Glasgow",
         "photo": "https://images.unsplash.com/photo-1614289371518-722f2615943d"
       },
       {
@@ -569,7 +556,7 @@
         "id": "r-key",
         "group": "Program",
         "label": "Keynotes",
-        "from": "track:main",
+        "detail": "Six customer keynotes on the Main Stage, 40 minutes each.",
         "tiers": {
           "customer": "yes",
           "lab": "yes",
@@ -580,7 +567,7 @@
         "id": "r-break",
         "group": "Program",
         "label": "Breakouts",
-        "from": "track:booth",
+        "detail": "Five sessions in The Booth across both days, including the Tarnell product Q&A.",
         "tiers": {
           "customer": "yes",
           "lab": "yes",
@@ -591,7 +578,7 @@
         "id": "r-night",
         "group": "Program",
         "label": "Opening night",
-        "from": "session:s111",
+        "detail": "Tuesday from 6:30 PM at Nave Carolina, with food, drinks and the six keynote speakers.",
         "tiers": {
           "customer": "yes",
           "lab": "yes",
@@ -602,7 +589,7 @@
         "id": "r-labs",
         "group": "Program",
         "label": "Hands-on labs",
-        "from": "track:lab",
+        "detail": "Four 90-minute labs with Tarnell engineers, 120 seats, first come.",
         "tiers": {
           "customer": "no",
           "lab": "4 reserved",
@@ -635,7 +622,7 @@
         "id": "r-seats",
         "group": "Seats",
         "label": "Seats",
-        "detail": "Lab seats are limited to 120, first come. Team registrations cover 2 to 5 people from one company.",
+        "detail": "Lab seats are limited to 120, first come, and a team registration covers 2 to 5 people from one company.",
         "tiers": {
           "customer": "1",
           "lab": "1 + lab seat",
@@ -652,6 +639,11 @@
   "venue": {
     "heading": "Getting there",
     "intro": "Nave Carolina is in Iñaquito, Quito, a short walk from La Carolina Metro station.",
+    "equator": {
+      "lineLabel": "0° Equator",
+      "dotLabel": "Nave Carolina · 0° 11′ S · 2,850 m up",
+      "text": "About 21 km south of the equator."
+    },
     "feature": {
       "title": "Tarnell shuttle",
       "tag": "Recommended",
@@ -797,10 +789,10 @@
       },
       {
         "q": "How do I deal with the altitude?",
-        "a": "Plan an easy first day and drink water, since the hall sits 2,850 m up, as",
+        "a": "Plan an easy first day and drink water, since the hall sits high up, as shown on",
         "link": {
           "href": "#equator",
-          "label": "the equator block shows"
+          "label": "the equator strip in Getting there"
         }
       }
     ]

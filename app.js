@@ -497,16 +497,6 @@
       '<div class="about-copy">' + a.paragraphs.map(function (p) { return "<p>" + copy(p) + "</p>"; }).join("") + "</div>");
   };
 
-  // Equator block: one huge latitude, a line for the equator, a dot for the hall, one sentence.
-  R.equator = function () {
-    var e = D.equator;
-    return '<section class="section sec-equator" id="equator" aria-labelledby="equator-title"><div class="wrap">' +
-      '<h2 class="eq-lat" id="equator-title" aria-label="' + esc(e.headingLabel) + '">' + esc(e.heading) + "</h2>" +
-      '<div class="eq-map" aria-hidden="true"><p class="eq-line"><span>' + esc(e.lineLabel) + '</span></p>' +
-      '<p class="eq-dot"><span class="dot"></span>' + esc(e.dotLabel) + "</p></div>" +
-      '<p class="eq-text">' + copy(e.sentence) + "</p></div></section>";
-  };
-
   R.speakers = function () {
     var sp = D.speakers, map = speakerSessions();
     function first(id) { return (map[id] || [])[0]; }
@@ -586,28 +576,6 @@
     return sectionShell("schedule", s.heading, strip + tabs + panels);
   };
 
-  function rowPreviewItems(row) {
-    if (!row.from) return null;
-    var parts = row.from.split(":"), kind = parts[0], key = parts[1], out = [];
-    D.schedule.days.forEach(function (day) {
-      day.sessions.forEach(function (s) {
-        if ((kind === "day" && day.id === key) || (kind === "track" && s.track === key) || (kind === "session" && s.id === key)) out.push({ day: day, s: s });
-      });
-    });
-    return out;
-  }
-  function rowPreviewHtml(row) {
-    var t = D.tickets, items = rowPreviewItems(row);
-    var incl = t.tiers.filter(function (tier) { var v = row.tiers[tier.id]; return v && v !== "no"; }).map(function (x) { return x.name; });
-    var body = items && items.length
-      ? '<ul class="pv-list">' + items.map(function (x) {
-          var tm = sessionTimes(x.day, x.s);
-          return '<li><span class="t">' + esc(x.day.short) + ", " + esc(fmtTime(tm.start)) + " " + esc(tzShort(viewTz(), tm.start)) + "</span> " + esc(x.s.title) + "</li>";
-        }).join("") + "</ul>"
-      : '<p>' + copy(row.detail || "") + "</p>";
-    return '<p class="pv-title">' + esc(row.label) + "</p>" + body +
-      '<p class="pv-incl">Included in: ' + (incl.length ? esc(incl.join(", ")) : "none") + "</p>";
-  }
   function cell(v) {
     if (v === "yes") return '<span class="yes"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2.2"/></svg><span class="sr">Included</span></span>';
     if (!v || v === "no") return '<span class="no" aria-hidden="true">-</span><span class="sr">Not included</span>';
@@ -630,13 +598,12 @@
       body += '<tr class="m-row" data-row="' + row.id + '"><th scope="row"><button type="button" class="m-label" aria-expanded="false" aria-controls="detail-' + row.id + '">' +
         esc(row.label) + '<span class="m-more" aria-hidden="true">+</span></button></th>' +
         t.tiers.map(function (tier) { return '<td class="c-' + tier.id + '" data-tier="' + esc(tier.name) + '">' + cell(row.tiers[tier.id]) + "</td>"; }).join("") + "</tr>" +
-        '<tr class="m-detail" id="detail-' + row.id + '" hidden><td colspan="' + (t.tiers.length + 1) + '"><div class="pv">' + rowPreviewHtml(row) + "</div></td></tr>";
+        '<tr class="m-detail" id="detail-' + row.id + '" hidden><td colspan="' + (t.tiers.length + 1) + '"><p class="m-detail-text">' + copy(row.detail || "") + "</p></td></tr>";
     });
     var table = '<table class="matrix" id="matrix" style="--tiers:' + t.tiers.length + '"><caption class="sr">What each registration type includes</caption>' + head + "<tbody>" + body + "</tbody></table>";
-    var preview = '<aside class="preview" id="preview" aria-live="polite" aria-label="Row preview"><p class="pv-empty">Hover or focus a row to see exactly what it covers.</p></aside>';
     return sectionShell("tickets", t.heading,
       (t.intro ? '<p class="lede">' + copy(t.intro) + "</p>" : "") +
-      '<fieldset class="matrix-wrap"><legend class="sr">Choose a registration type</legend><div class="matrix-layout">' + table + preview + "</div></fieldset>" +
+      '<fieldset class="matrix-wrap"><legend class="sr">Choose a registration type</legend><div class="matrix-layout">' + table + "</div></fieldset>" +
       '<div class="matrix-cta"><a class="btn btn-primary" href="#register" id="tier-cta"></a>' +
       (t.footnote ? '<p class="note matrix-foot">' + copy(t.footnote) + "</p>" : "") + "</div>");
   };
@@ -656,6 +623,10 @@
     var v = D.venue, f = v.feature;
     return sectionShell("venue", v.heading,
       (v.intro ? '<p class="lede">' + copy(v.intro) + "</p>" : "") +
+      // Equator strip: a thin line for the equator, a dot for the hall just below it, one line of text.
+      (v.equator ? '<div class="eq-strip" id="equator"><div class="eq-map"><p class="eq-line"><span>' + esc(v.equator.lineLabel) + "</span></p>" +
+        '<p class="eq-dot"><span class="dot" aria-hidden="true"></span>' + esc(v.equator.dotLabel) + "</p></div>" +
+        '<p class="eq-text">' + copy(v.equator.text) + "</p></div>" : "") +
       '<div class="venue-layout">' +
       (f ? '<div class="venue-feature">' + '<h3>' + esc(f.title) + (f.tag ? ' <span class="venue-tag">' + esc(f.tag) + "</span>" : "") + "</h3><p>" + copy(f.body) + "</p></div>" : "") +
       '<dl class="ruled">' + v.items.map(function (x) { return "<div><dt>" + esc(x.title) + "</dt><dd>" + copy(x.body) + "</dd></div>"; }).join("") + "</dl></div>" +
@@ -948,23 +919,19 @@
   function wireMatrix() {
     var m = $("matrix");
     if (!m) return;
-    var preview = $("preview");
     m.addEventListener("change", function (e) { if (e.target.name === "tier") setTier(e.target.value); });
-    function show(rowEl) {
-      Array.prototype.forEach.call(m.querySelectorAll(".m-row"), function (r) { r.classList.toggle("is-hot", r === rowEl); });
-      var row = byId(D.tickets.rows, rowEl.getAttribute("data-row"));
-      if (row && preview) preview.innerHTML = rowPreviewHtml(row);
-    }
-    Array.prototype.forEach.call(m.querySelectorAll(".m-row"), function (rowEl) {
-      rowEl.addEventListener("mouseenter", function () { show(rowEl); });
-      rowEl.addEventListener("focusin", function () { show(rowEl); });
-      var btn = rowEl.querySelector(".m-label");
+    // The "+" opens one sentence right under its row. One row open at a time. A real button, so
+    // click, tap, Enter and Space all work.
+    var btns = Array.prototype.slice.call(m.querySelectorAll(".m-label"));
+    btns.forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var detail = $(btn.getAttribute("aria-controls"));
         var open = btn.getAttribute("aria-expanded") === "true";
-        btn.setAttribute("aria-expanded", String(!open));
-        detail.hidden = open;
-        show(rowEl);
+        btns.forEach(function (b) {
+          var on = b === btn && !open;
+          b.setAttribute("aria-expanded", String(on));
+          $(b.getAttribute("aria-controls")).hidden = !on;
+          b.closest(".m-row").classList.toggle("is-open", on);
+        });
       });
     });
     setTier(state.tier);
