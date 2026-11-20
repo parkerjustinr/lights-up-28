@@ -124,35 +124,40 @@
         "id": "sp1",
         "name": "Elena Vásquez",
         "role": "VP Operations",
-        "company": "Northline Transit, Santiago",
+        "company": "Northline Transit",
+        "place": "Santiago, Chile",
         "photo": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604"
       },
       {
         "id": "sp2",
         "name": "Arjun Mehta",
         "role": "Facilities Lead",
-        "company": "Kestow Health, Bengaluru",
+        "company": "Kestow Health",
+        "place": "Bengaluru, India",
         "photo": "https://images.unsplash.com/photo-1629425733761-caae3b5f2e50"
       },
       {
         "id": "sp3",
         "name": "Adaeze Nwosu",
         "role": "Production Manager",
-        "company": "Wexley Arena, Lagos",
+        "company": "Wexley Arena",
+        "place": "Lagos, Nigeria",
         "photo": "https://images.unsplash.com/photo-1573497161161-c3e73707e25c"
       },
       {
         "id": "sp4",
         "name": "Lars Ekholm",
         "role": "Head of Field Service",
-        "company": "Corvan Lifts, Oslo",
+        "company": "Corvan Lifts",
+        "place": "Oslo, Norway",
         "photo": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
       },
       {
         "id": "sp5",
         "name": "Siobhan Kerr",
         "role": "COO",
-        "company": "Fernhill Brewing, Dublin",
+        "company": "Fernhill Brewing",
+        "place": "Dublin, Ireland",
         "photo": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?rect=1206,0,2860,2600",
         "photoEye": 0.4
       },
@@ -160,35 +165,40 @@
         "id": "sp6",
         "name": "Callum Reid",
         "role": "Operations Director",
-        "company": "Saltmarsh Ferries, Glasgow",
+        "company": "Saltmarsh Ferries",
+        "place": "Glasgow, UK",
         "photo": "https://images.unsplash.com/photo-1614289371518-722f2615943d"
       },
       {
         "id": "sp7",
         "name": "Lucía Vera",
         "role": "Dispatch Supervisor",
-        "company": "Cordillera Water, Bogotá",
+        "company": "Cordillera Water",
+        "place": "Bogotá, Colombia",
         "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2"
       },
       {
         "id": "sp8",
         "name": "Andrés Saltos",
         "role": "Maintenance Planner",
-        "company": "Ruta Andina Rail, Guayaquil",
+        "company": "Ruta Andina Rail",
+        "place": "Guayaquil, Ecuador",
         "photo": "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c"
       },
       {
         "id": "sp9",
         "name": "Greta Vogel",
         "role": "Shift Lead",
-        "company": "Ostkai Terminals, Hamburg",
+        "company": "Ostkai Terminals",
+        "place": "Hamburg, Germany",
         "photo": "https://images.unsplash.com/photo-1594744803329-e58b31de8bf5"
       },
       {
         "id": "sp10",
         "name": "Daniel Cho",
         "role": "Service Desk Manager",
-        "company": "Brightwell Venues, Toronto",
+        "company": "Brightwell Venues",
+        "place": "Toronto, Canada",
         "photo": "https://images.unsplash.com/photo-1596075780750-81249df16d19"
       }
     ],
@@ -659,7 +669,7 @@
       },
       {
         "title": "Paying for the Metro",
-        "body": "Use a Tarjeta Ciudad card, or pay cash at the turnstile."
+        "body": "Pay at the turnstile with cash or the Tarjeta Ciudad, Quito's transit card."
       },
       {
         "title": "From the airport",
@@ -721,15 +731,15 @@
         "say": "keh BEHS-tyah"
       }
     ],
-    "prev": "Previous",
-    "next": "Next",
+    "prev": "Previous phrase",
+    "next": "Next phrase",
     "listen": "Listen",
-    "try": "Try it",
-    "record": "Record and compare",
-    "listening": "Listening...",
-    "recording": "Listening...",
+    "try": "Record",
+    "record": "Record",
+    "listening": "Recording. Say the phrase, then tap Stop.",
+    "recording": "Recording. Say the phrase, then tap Stop.",
     "playing": "Playing your clip, then the voice.",
-    "heard": "Heard:",
+    "heard": "It heard:",
     "nailed": "Nailed it.",
     "close": "Close. Watch:",
     "again": "Try again, a bit slower.",
@@ -738,21 +748,27 @@
     "privacy": "Your browser does the listening. Nothing is saved on this site.",
     "voiceLangs": [
       "es-EC",
+      "es-CO",
       "es-419",
       "es-US",
       "es-MX",
       "es-ES"
     ],
-    "done": "I'm done",
+    "done": "Stop",
     "noVoice": "Your phone has no Spanish voice installed. Use the respelling above.",
-    "fallback": "Speech recognition isn't available here, so this phrase switched to Record and compare. Tap it to record.",
+    "fallback": "Speech recognition isn't available here, so this phrase will play your recording back instead. Tap Record again.",
     "fallbackWhy": {
-      "not-allowed": "Speech recognition was blocked, so this phrase switched to Record and compare. Tap it to record.",
-      "service-not-allowed": "Speech recognition isn't allowed in this browser, so this phrase switched to Record and compare. Tap it to record.",
-      "audio-capture": "The microphone couldn't be shared with speech recognition, so this phrase switched to Record and compare. Tap it to record.",
-      "network": "Speech recognition needs a network connection, so this phrase switched to Record and compare. Tap it to record."
+      "not-allowed": "Speech recognition was blocked, so this phrase will play your recording back instead. Tap Record again.",
+      "service-not-allowed": "Speech recognition isn't allowed in this browser, so this phrase will play your recording back instead. Tap Record again.",
+      "audio-capture": "The microphone couldn't be shared with speech recognition, so this phrase will play your recording back instead. Tap Record again.",
+      "network": "Speech recognition needs a network connection, so this phrase will play your recording back instead. Tap Record again."
     },
-    "phrasebook": "Tap through and say it out loud."
+    "phrasebook": "Tap through and say it out loud.",
+    "steps": [
+      "Listen",
+      "Say it",
+      "See what it heard"
+    ]
   },
   "registration": {
     "heading": "Register",

@@ -634,11 +634,12 @@
       var f = first(p.id);
       return '<li class="sp-card" id="speaker-' + p.id + '">' +
         (f && f.s.cue ? '<p class="sp-cue">' + esc(f.s.cue) + "</p>" : "") + photo(p, 480, 600) +
-        '<h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + '</p><p class="sp-company">' + esc(p.company) + "</p>" + link(p) + "</li>";
+        '<h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + '</p><p class="sp-company">' + esc(p.company) + "</p>" +
+        (p.place ? '<p class="sp-company sp-place">' + esc(p.place) + "</p>" : "") + link(p) + "</li>";
     }
     function row(p) {
       return '<li class="sp-row" id="speaker-' + p.id + '">' + photo(p, 160, 160) +
-        '<div class="sp-row-text"><h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + ' <span class="sp-company">' + esc(p.company) + "</span></p></div>" + link(p) + "</li>";
+        '<div class="sp-row-text"><h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + ' <span class="sp-company">' + esc(p.company) + (p.place ? ", " + esc(p.place) : "") + "</span></p></div>" + link(p) + "</li>";
     }
     var keynote = sp.items.filter(function (p) { var f = first(p.id); return f && f.s.cue; });
     keynote.sort(function (a, b) { return parseInt(first(a.id).s.cue.slice(1), 10) - parseInt(first(b.id).s.cue.slice(1), 10); });
@@ -762,18 +763,23 @@
   }
   R.phrases = function () {
     var ph = D.phrases, book = phBook();
-    return sectionShell("phrases", ph.heading,
+    return '<section class="section sec-phrases' + (book ? " is-book" : "") + '" id="phrases" aria-labelledby="phrases-title"><div class="wrap">' +
+      '<h2 class="section-title" id="phrases-title">' + esc(ph.heading) + "</h2>" +
+      // The phrase on a paper cue card: counter and arrows in the top corner.
       '<div class="ph-card" id="ph-card">' +
         '<div class="ph-top"><p class="ph-count" id="ph-count"></p>' +
-          '<div class="ph-nav"><button type="button" class="btn btn-small" id="ph-prev">' + esc(ph.prev) + '</button>' +
-          '<button type="button" class="btn btn-small" id="ph-next">' + esc(ph.next) + "</button></div></div>" +
+          '<button type="button" class="ph-arrow" id="ph-prev" aria-label="' + esc(ph.prev) + '"><span aria-hidden="true">&larr;</span></button>' +
+          '<button type="button" class="ph-arrow" id="ph-next" aria-label="' + esc(ph.next) + '"><span aria-hidden="true">&rarr;</span></button></div>' +
         '<div class="ph-body" id="ph-body" aria-live="polite"></div>' +
-        '<div class="ph-actions"' + (book ? " hidden" : "") + '><button type="button" class="btn btn-primary btn-small" id="ph-listen" hidden>' + esc(ph.listen) + "</button>" +
-          '<button type="button" class="btn btn-small" id="ph-try"' + (book ? " hidden" : "") + ">" + esc(ph.try) + "</button>" +
-          '<span class="ph-meter" id="ph-meter" aria-hidden="true" hidden><i></i><i></i><i></i><i></i><i></i></span></div>' +
-        '<div class="ph-result" id="ph-result" aria-live="polite"></div>' +
       "</div>" +
-      '<p class="ph-privacy">' + esc(book ? ph.phrasebook : ph.privacy) + "</p>");
+      (book ? "" :
+        '<ol class="ph-steps" id="ph-steps">' + ph.steps.map(function (t, k) { return '<li data-step="' + (k + 1) + '">' + (k + 1) + " " + esc(t) + "</li>"; }).join("") + "</ol>" +
+        '<div class="ph-actions"><button type="button" class="btn btn-small ph-listen" id="ph-listen" hidden>' + esc(ph.listen) + "</button>" +
+          '<button type="button" class="btn btn-small ph-rec" id="ph-try">' + esc(ph.try) + "</button>" +
+          '<span class="ph-meter" id="ph-meter" aria-hidden="true" hidden><i></i><i></i><i></i><i></i><i></i></span></div>' +
+        '<div class="ph-result" id="ph-result" aria-live="polite"></div>') +
+      '<p class="ph-privacy">' + esc(book ? ph.phrasebook : ph.privacy) + "</p>" +
+    "</div></section>";
   };
   var PH = { i: 0, voice: null, busy: false, rec: null, stream: null, timer: null, recordOnly: {}, audio: null };
   // A 0.05s silent WAV, played inside a tap to unlock audio playback on iOS.
@@ -786,20 +792,39 @@
   function phSay(item) { return item.say.replace(/,/g, "").split(/\s+/); }
   function phRender() {
     var ph = D.phrases, item = ph.items[PH.i];
-    $("ph-count").textContent = (PH.i + 1) + " / " + ph.items.length;
-    $("ph-body").innerHTML = '<p class="ph-es" lang="es">' + esc(item.es) + '</p><p class="ph-en">' + esc(item.en) + '</p><p class="ph-say">' + esc(item.say) + "</p>";
-    $("ph-result").innerHTML = "";
+    function two(n) { return (n < 10 ? "0" : "") + n; }
+    $("ph-count").textContent = two(PH.i + 1) + " / " + two(ph.items.length);
+    // The stressed syllable is the capitalized one: bold it.
+    var say = esc(item.say).replace(/[A-ZÁÉÍÓÚÑ]{2,}/g, "<b>$&</b>");
+    $("ph-body").innerHTML = '<p class="ph-es" lang="es">' + esc(item.es) + '</p><p class="ph-en">' + esc(item.en) + '</p><p class="ph-say">' + say + "</p>";
+    if ($("ph-result")) $("ph-result").innerHTML = "";
+    phStep(1);
+  }
+  // The three-step strip: the current step is bold paper, the others dimmed.
+  function phStep(n) {
+    Array.prototype.forEach.call(document.querySelectorAll("#ph-steps li"), function (li) {
+      var on = +li.getAttribute("data-step") === n;
+      li.classList.toggle("is-on", on);
+      if (on) li.setAttribute("aria-current", "step"); else li.removeAttribute("aria-current");
+    });
   }
   function phPickVoice() {
     if (!("speechSynthesis" in window)) return null;
     var vs = window.speechSynthesis.getVoices() || [], order = D.phrases.voiceLangs;
     function lang(v) { return String(v.lang || "").replace("_", "-").toLowerCase(); }
-    for (var k = 0; k < order.length; k++) {
-      var want = order[k].toLowerCase();
-      for (var j = 0; j < vs.length; j++) if (lang(vs[j]) === want) return vs[j];
+    // Among voices for one language, "Natural" or "Online" voices (Edge) come first.
+    function best(list) {
+      for (var q = 0; q < list.length; q++) if (/natural|online/i.test(list[q].name || "")) return list[q];
+      return list[0] || null;
     }
-    for (var m = 0; m < vs.length; m++) if (lang(vs[m]).indexOf("es") === 0) return vs[m];
-    return null;
+    var last = order[order.length - 1].toLowerCase(); // es-ES is the last resort
+    for (var k = 0; k < order.length - 1; k++) {
+      var want = order[k].toLowerCase();
+      var hit = best(vs.filter(function (v) { return lang(v) === want; }));
+      if (hit) return hit;
+    }
+    var other = best(vs.filter(function (v) { var l = lang(v); return l.indexOf("es") === 0 && l !== last; }));
+    return other || best(vs.filter(function (v) { return lang(v) === last; }));
   }
   // Voices load late on phones, so Listen is shown whenever the browser can speak at all.
   function phUpdateVoice() {
@@ -831,6 +856,7 @@
   function phListen() {
     var ph = D.phrases, text = ph.items[PH.i].es, syn = window.speechSynthesis;
     if (!syn) return;
+    phStep(2);
     syn.cancel();
     function go() {
       PH.voice = phPickVoice();
@@ -862,11 +888,12 @@
       var n = marks.filter(Boolean).length;
       if (!best || n > best.n) best = { t: t, marks: marks, n: n };
     });
+    phStep(3);
     if (!best) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noSpeech) + "</p>"; return; }
     var esWords = item.es.split(/\s+/), missed = [], missedSay = [];
     var words = esWords.map(function (w, k) {
       if (!best.marks[k]) { missed.push(w.replace(/[¿?¡!.,]/g, "")); missedSay.push(say[k]); }
-      return '<span class="ph-w ' + (best.marks[k] ? "is-hit" : "is-miss") + '">' + esc(w) + "</span>";
+      return '<span class="ph-w ' + (best.marks[k] ? "is-hit" : "is-miss") + '">' + esc(w) + '<span class="sr">' + (best.marks[k] ? " (heard)" : " (missed)") + "</span></span>";
     }).join(" ");
     var msg = best.n === want.length ? esc(ph.nailed)
       : best.n * 2 >= want.length ? esc(ph.close) + " " + esc(missed.join(" ")) + ' <span class="ph-say-inline">(' + esc(missedSay.join(" ")) + ")</span>"
@@ -935,7 +962,8 @@
     if (AC && !PH.ac) { try { PH.ac = new AC(); } catch (e) { PH.ac = null; } }
     if (!useSR) phUnlockAudio();
     $("ph-try").textContent = ph.done;
-    $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.listening) + "</p>";
+    phStep(2);
+    $("ph-result").innerHTML = '<p class="ph-msg ph-live">' + esc(ph.listening) + "</p>";
     // Ask for the mic first, inside the tap, so the permission prompt appears.
     if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
       if (useSR) { phStartSR(SR, null); return; }
@@ -957,14 +985,19 @@
     var rec;
     try {
       rec = new SR();
-      PH.rec = rec; PH.list = []; PH.micError = false;
+      PH.rec = rec; PH.heardAll = ""; PH.heardFinal = ""; PH.micError = false;
       rec.lang = "es-EC"; rec.maxAlternatives = 3; rec.continuous = true; rec.interimResults = true;
+      // Rebuild the transcript from event.results on every result event: results[i][0] for all i.
+      // Nothing is appended to a running string, so a word can't be doubled.
       rec.onresult = function (e) {
+        var all = [], fin = [];
         for (var k = 0; k < e.results.length; k++) {
-          var r = e.results[k], alts = [];
-          for (var a = 0; a < r.length; a++) alts.push(r[a].transcript);
-          PH.list[k] = alts;
+          var t = e.results[k][0] ? e.results[k][0].transcript : "";
+          all.push(t);
+          if (e.results[k].isFinal) fin.push(t);
         }
+        PH.heardAll = all.join(" ").replace(/\s+/g, " ").trim();
+        PH.heardFinal = fin.join(" ").replace(/\s+/g, " ").trim();
       };
       rec.onerror = function (e) {
         var code = e && e.error;
@@ -996,6 +1029,7 @@
       PH.busy = true; $("ph-try").disabled = true;
       var url = URL.createObjectURL(new Blob(chunks, { type: type }));
       var au = PH.audio || document.createElement("audio");
+      phStep(3);
       $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.playing) + "</p>";
       var next = function () { au.onended = au.onerror = null; URL.revokeObjectURL(url); phSpeak(ph.items[PH.i].es, function () { PH.busy = false; $("ph-try").disabled = false; }); };
       au.onended = next; au.onerror = next;
@@ -1013,13 +1047,14 @@
     if (PH.mr && PH.mr.state !== "inactive") { PH.mr.stop(); return; }
     phStopMic();
   }
+  // Grade only the rebuilt final text (a stop finalizes what was still interim).
   function phGrade() {
-    var ph = D.phrases, list = (PH.list || []).filter(Boolean), micError = PH.micError;
+    var ph = D.phrases, text = PH.heardFinal || "", micError = PH.micError;
     phStopMic();
+    phStep(3);
     if (micError) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; return; }
-    if (!list.length) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noSpeech) + "</p>"; return; }
-    var cands = [0, 1, 2].map(function (a) { return list.map(function (alts) { return alts[a] || alts[0]; }).join(" ").replace(/\s+/g, " ").trim(); });
-    phJudge(cands.filter(function (c, k) { return c && cands.indexOf(c) === k; }));
+    if (!text) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noSpeech) + "</p>"; return; }
+    phJudge([text]);
   }
   function phTry() {
     if (PH.busy) { if (PH.mr && PH.audio) { try { var pr = PH.audio.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) { /* later */ } } phDone(); }
@@ -1027,11 +1062,13 @@
   }
   function wirePhrases() {
     if (!$("ph-card")) return;
-    var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    $("ph-try").textContent = phTryLabel();
+    var ph = D.phrases;
+    function label() { if ($("ph-try")) $("ph-try").textContent = phTryLabel(); }
+    label();
     phRender();
-    $("ph-prev").addEventListener("click", function () { phStopMic(); PH.i = (PH.i - 1 + ph.items.length) % ph.items.length; phRender(); $("ph-try").textContent = phTryLabel(); });
-    $("ph-next").addEventListener("click", function () { phStopMic(); PH.i = (PH.i + 1) % ph.items.length; phRender(); $("ph-try").textContent = phTryLabel(); });
+    $("ph-prev").addEventListener("click", function () { phStopMic(); PH.i = (PH.i - 1 + ph.items.length) % ph.items.length; phRender(); label(); });
+    $("ph-next").addEventListener("click", function () { phStopMic(); PH.i = (PH.i + 1) % ph.items.length; phRender(); label(); });
+    if (!$("ph-try")) return; // phones: phrasebook only
     $("ph-listen").addEventListener("click", phListen);
     $("ph-try").addEventListener("click", phTry);
     phUpdateVoice();
