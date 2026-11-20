@@ -718,8 +718,8 @@
   }
   function saveCard(o, filename) {
     var W = 1200, H = 630, P = 56;
-    var host = cssVar("--host", "#1B3BFF"), onHost = cssVar("--on-host", "#FFFFFF"), ink = cssVar("--ink", "#101218");
-    var numeralColor = cssVar("--host-tint", "#3653FF");
+    var host = cssVar("--host", "#FFC629"), onHost = cssVar("--on-host", "#101218"), ink = cssVar("--ink", "#101218");
+    var numeralColor = cssVar("--host-deep", "#F0B000");
     var display = cssVar("--display", "sans-serif"), body = cssVar("--body", "sans-serif"), mono = cssVar("--mono", "monospace");
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
     Promise.all([fontsReady, loadImage(o.photo ? img(o.photo, 720, 860) : "")]).then(function (r) {

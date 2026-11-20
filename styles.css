@@ -5,15 +5,16 @@
 
 :root {
   /* Palette. Each color means one thing. */
-  --host: #1B3BFF;         /* Tarnell blue: the wall, Main Stage, keynote speakers, the selected registration type */
-  --on-host: #FFFFFF;
-  --host-tint: #3A56FF;    /* the big cue numeral behind the wall name only */
-  --paper: #F3F0E8;        /* page background */
-  --ink: #101218;          /* text, the Register button, dark sections */
-  --booth: #DDE3FF;        /* The Booth */
-  --lab: #E9DFC6;          /* the Lab */
-  --standby: #FF4632;      /* standby lamp only */
-  --go: #1ED37A;           /* GO lamp only */
+  --host: #FFC629;         /* sunflower: the wall, Main Stage, keynote speakers, the selected registration type, the walk-up card */
+  --on-host: #101218;      /* ink text on the wall */
+  --host-deep: #F0B000;    /* the big cue numeral behind the wall name only */
+  --paper: #F7F5EF;        /* page background */
+  --ink: #101218;          /* text, the Register button, the Register section, dark blocks */
+  --booth: #D6E4F0;        /* sky: The Booth, the equator block */
+  --lab: #E9DFC6;          /* sand: the Lab */
+  --standby: #E5322D;      /* standby lamp only */
+  --go: #18B868;           /* GO ring only */
+  --called: color-mix(in srgb, var(--ink) 70%, var(--host)); /* called cues: dimmed but still 5.6:1 on the wall */
   --muted: #4A4D57;        /* secondary text, 7:1 on paper */
   --focus: var(--ink);
 
@@ -120,7 +121,7 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
 /* The slightly too much moment: the live cue number, huge and flat, cut off by the floor line. */
 .stage-numeral {
   position: absolute; z-index: 0; left: -0.03em; bottom: -0.12em; margin: 0; pointer-events: none;
-  font-family: var(--display); font-weight: 800; font-stretch: 100%; font-size: 230px; line-height: 0.8; color: var(--host-tint);
+  font-family: var(--display); font-weight: 800; font-stretch: 100%; font-size: 230px; line-height: 0.8; color: var(--host-deep);
 }
 .stage-photo { grid-area: photo; width: clamp(104px, 30vw, 170px); aspect-ratio: 4 / 5; align-self: start; margin-top: 2px; position: relative; z-index: 2; background: var(--host); isolation: isolate; overflow: hidden; }
 .stage-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; filter: grayscale(1) contrast(1.1) brightness(1.06); mix-blend-mode: multiply; }
@@ -138,11 +139,11 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
 .cue-state { display: inline-flex; align-items: center; gap: 3px; font-family: var(--mono); font-size: clamp(8px, 2.4vw, 10px); line-height: 1; }
 .cue-state:empty { display: none; }
 .lamp { width: 7px; height: 7px; border-radius: 50%; background: var(--standby); flex: 0 0 auto; }
-.cue-btn.is-live { background: var(--on-host); color: var(--host); }
-.cue-btn.is-called { opacity: 0.45; }
-html:not([data-shot]) .cue-btn:not(.is-live):hover { opacity: 1; border-width: 3px; }
+.cue-btn.is-live { background: var(--ink); color: var(--host); border-color: var(--ink); }
+.cue-btn.is-called { color: var(--called); border-color: var(--called); border-style: dotted; }
+html:not([data-shot]) .cue-btn:not(.is-live):hover { color: var(--ink); border-color: var(--ink); border-width: 3px; }
 .go-btn {
-  position: relative; flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--ink); color: var(--on-host);
+  position: relative; flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%; border: 0; background: var(--ink); color: var(--paper);
   font-family: var(--mono); font-weight: 500; font-size: 1.05rem; cursor: pointer; padding: 0; display: grid; place-items: center;
 }
 .go-ring { position: absolute; inset: 0; border-radius: 50%; border: 4px solid var(--go); opacity: 0.4; transition: opacity 400ms ease-out; }
@@ -212,7 +213,7 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
 .sp-group { font-family: var(--mono); font-weight: 500; font-size: 1rem; margin: 28px 0 12px; padding-top: 10px; border-top: var(--rule); }
 .sp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 14px; }
 .sp-card { display: flex; flex-direction: column; }
-.sp-cue { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0 0 6px; color: var(--host); }
+.sp-cue { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0 0 6px; }
 .sp-photo { width: 100%; aspect-ratio: 4 / 5; }
 .sp-booth { border-bottom: 1px solid var(--ink); }
 .sp-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--ink); }
@@ -271,11 +272,9 @@ html:not([data-shot]) .day-tab:hover:not([aria-selected="true"]) { background: v
 .s-track { justify-self: start; font-family: var(--mono); font-weight: 500; font-size: 0.85rem; }
 .session.is-common .s-title { font-size: 1.15rem; }
 .session.is-common .s-detail { color: var(--muted); }
-/* Keynotes are full blocks of host blue, so no day reads as one long run of identical rows. */
+/* Keynotes are full blocks of sunflower, so no day reads as one long run of identical rows. */
 .session.is-keynote { color: var(--on-host); border-top: 0; margin: 8px 0; padding: 20px 16px; }
 .session.is-keynote .s-title { font-size: clamp(1.6rem, 4vw, 2.4rem); font-stretch: 105%; }
-.session.is-keynote .s-live { background: var(--on-host); color: var(--ink); }
-.session.is-keynote :focus-visible { outline-color: var(--on-host); }
 @media (min-width: 760px) {
   .session { grid-template-columns: 230px 1fr auto; gap: 20px; align-items: baseline; padding-left: 18px; }
   .session.is-keynote { padding: 24px 20px; }
@@ -364,16 +363,16 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .ruled dd { max-width: 62ch; }
 @media (min-width: 880px) { .venue-layout { grid-template-columns: 5fr 7fr; gap: 40px; } }
 
-/* ---------- Register: a full host field, the form on paper inside it ---------- */
-.sec-register { background: var(--host); color: var(--on-host); border-bottom: 0; }
-.sec-register .lede { color: var(--on-host); }
+/* ---------- Register: a full ink field, the form on paper inside it ---------- */
+.sec-register { background: var(--ink); color: var(--paper); border-bottom: 0; }
+.sec-register .lede { color: var(--paper); }
 @media (min-width: 960px) {
   .sec-register .wrap { display: grid; grid-template-columns: 4fr 8fr; column-gap: 40px; align-items: start; }
   .sec-register .wrap > * { grid-column: 1; }
   .sec-register #reg-out { grid-column: 2; grid-row: 1 / span 4; }
   .sec-register #reg-out:has(.confirm) { grid-column: 1 / -1; grid-row: auto; margin-top: 8px; }
 }
-.sec-register :focus-visible { outline-color: var(--on-host); }
+.sec-register :focus-visible { outline-color: var(--paper); }
 .demo { font-weight: 700; font-size: 0.95rem; max-width: 760px; }
 .reg-form { display: grid; gap: 20px; max-width: 760px; background: var(--paper); color: var(--ink); padding: 24px 18px; }
 .reg-form :focus-visible { outline-color: var(--ink); }
@@ -389,7 +388,7 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .reg-form .btn { justify-self: start; }
 .confirm { max-width: 1180px; }
 .confirm:focus { outline: none; }
-.walkup { padding-bottom: 28px; outline: 2px solid var(--on-host); outline-offset: -2px; }
+.walkup { padding-bottom: 28px; }
 .walkup .stage-body { display: block; padding-top: 24px; padding-bottom: 12px; }
 .walkup .stage-copy { display: block; max-width: none; }
 .walkup .stage-title { margin-top: 10px; }
@@ -402,8 +401,8 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 }
 .confirm-demo { margin: 14px 0 14px; font-weight: 700; }
 .confirm-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.sec-register .confirm-actions .btn { color: var(--on-host); border-color: var(--on-host); }
-html:not([data-shot]) .sec-register .confirm-actions .btn:hover { background: var(--on-host); color: var(--host); }
+.sec-register .confirm-actions .btn { color: var(--paper); border-color: var(--paper); }
+html:not([data-shot]) .sec-register .confirm-actions .btn:hover { background: var(--host); border-color: var(--host); color: var(--ink); }
 
 /* ---------- FAQ: big heading beside ruled rows ---------- */
 .faq-layout { display: grid; gap: 8px; }
