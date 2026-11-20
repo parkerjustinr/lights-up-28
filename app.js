@@ -795,7 +795,7 @@
     function two(n) { return (n < 10 ? "0" : "") + n; }
     $("ph-count").textContent = two(PH.i + 1) + " / " + two(ph.items.length);
     // The stressed syllable is the capitalized one: bold it.
-    var say = esc(item.say).replace(/[A-ZÁÉÍÓÚÑ]{2,}/g, "<b>$&</b>");
+    var say = item.say.split(" ").map(function (w) { return '<span class="nw">' + esc(w).replace(/[A-ZÁÉÍÓÚÑ]{2,}/g, "<b>$&</b>") + "</span>"; }).join(" ");
     $("ph-body").innerHTML = '<p class="ph-es" lang="es">' + esc(item.es) + '</p><p class="ph-en">' + esc(item.en) + '</p><p class="ph-say">' + say + "</p>";
     if ($("ph-result")) $("ph-result").innerHTML = "";
     phStep(1);
@@ -884,7 +884,9 @@
     var ph = D.phrases, item = ph.items[PH.i], want = phWords(item.es), say = phSay(item), best = null;
     transcripts.forEach(function (t) {
       var got = phWords(t);
-      var marks = want.map(function (w) { return got.indexOf(w) > -1; });
+      // A phrase can list other spellings that count for a word, e.g. "seas" for "sea".
+      var alt = item.accept || {};
+      var marks = want.map(function (w) { return got.indexOf(w) > -1 || (alt[w] || []).some(function (a) { return got.indexOf(a) > -1; }); });
       var n = marks.filter(Boolean).length;
       if (!best || n > best.n) best = { t: t, marks: marks, n: n };
     });

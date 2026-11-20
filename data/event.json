@@ -681,54 +681,65 @@
     "heading": "Say it in Quito",
     "items": [
       {
-        "es": "Buenos días.",
-        "en": "Good morning.",
-        "say": "BWEH-nohs DEE-ahs"
+        "es": "No sea malito.",
+        "en": "Be a dear. A warm, polite way to ask for a favor.",
+        "say": "noh SEH-ah mah-LEE-toh",
+        "accept": {
+          "sea": [
+            "seas"
+          ]
+        }
       },
       {
-        "es": "¿Dónde está el Metro?",
-        "en": "Where's the Metro?",
-        "say": "DOHN-deh ehs-TAH ehl MEH-troh"
+        "es": "¡De una!",
+        "en": "I'm in! Say it when you're joining the plan.",
+        "say": "deh OO-nah"
       },
       {
-        "es": "A la estación La Carolina, por favor.",
-        "en": "To La Carolina station, please.",
-        "say": "ah lah ehs-tah-SYOHN lah kah-roh-LEE-nah, pohr fah-VOHR"
+        "es": "¡Qué chévere!",
+        "en": "How cool!",
+        "say": "keh CHEH-veh-reh"
       },
       {
-        "es": "Vengo a la conferencia.",
-        "en": "I'm here for the conference.",
-        "say": "BEHN-goh ah lah kohn-feh-REHN-syah"
-      },
-      {
-        "es": "¿Dónde está el baño?",
-        "en": "Where's the bathroom?",
-        "say": "DOHN-deh ehs-TAH ehl BAH-nyoh"
-      },
-      {
-        "es": "Un café, por favor.",
-        "en": "A coffee, please.",
-        "say": "oon kah-FEH, pohr fah-VOHR"
-      },
-      {
-        "es": "¿Cuánto cuesta?",
-        "en": "How much is it?",
-        "say": "KWAHN-toh KWEHS-tah"
-      },
-      {
-        "es": "La cuenta, por favor.",
-        "en": "The check, please.",
-        "say": "lah KWEHN-tah, pohr fah-VOHR"
-      },
-      {
-        "es": "¿Me espera un momentito, por favor?",
-        "en": "Could you wait a moment for me, please? In Ecuador, \"-ito\" softens a request.",
-        "say": "meh ehs-PEH-rah oon moh-mehn-TEE-toh, pohr fah-VOHR"
+        "es": "¡De ley!",
+        "en": "Of course!",
+        "say": "deh LAY"
       },
       {
         "es": "¡Qué bestia!",
-        "en": "How crazy! An Ecuadorian way to say \"no way.\"",
+        "en": "How crazy!",
         "say": "keh BEHS-tyah"
+      },
+      {
+        "es": "¡Pilas!",
+        "en": "Look sharp!",
+        "say": "PEE-lahs"
+      },
+      {
+        "es": "Sigue nomás.",
+        "en": "Go right ahead. \"Nomás\" means no problem here.",
+        "say": "SEE-geh noh-MAHS"
+      },
+      {
+        "es": "Había full gente.",
+        "en": "There were a ton of people. \"Full\" is borrowed from English.",
+        "say": "ah-BEE-ah FOOL HEHN-teh",
+        "accept": {
+          "full": [
+            "ful",
+            "fool"
+          ]
+        }
+      },
+      {
+        "es": "Es mi pana.",
+        "en": "That's my friend.",
+        "say": "ehs mee PAH-nah"
+      },
+      {
+        "es": "¿Me espera un momentito?",
+        "en": "Could you wait a moment? The \"-ito\" makes it polite.",
+        "say": "meh ehs-PEH-rah oon moh-mehn-TEE-toh"
       }
     ],
     "prev": "Previous phrase",

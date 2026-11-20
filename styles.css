@@ -426,6 +426,7 @@ html:not([data-shot]) .ph-arrow:hover { background: var(--ink); color: var(--pap
 .ph-en { font-size: 1.2rem; margin: 0 0 8px; max-width: 52ch; }
 .ph-say { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0; }
 .ph-say b { font-weight: 700; }
+.ph-say .nw { white-space: nowrap; }
 /* The three steps: the current one bold paper, the others dimmed (still 4.5:1 on ink). */
 .ph-steps { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 18px 0 0; font-family: var(--mono); font-weight: 500; font-size: 1rem; color: var(--dim-on-ink); }
 .ph-steps li.is-on { color: var(--paper); font-weight: 700; }
