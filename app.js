@@ -239,6 +239,10 @@
       '<div class="band">' +
         '<div class="band-text"><h1 id="hero-title">' + esc(h.title) + "</h1>" +
         '<p class="band-when">' + esc(m.dateLine) + "</p>" +
+        // Two standby cues: a red lamp, STBY, a link. Desktop: under the date line. Phones: under Register.
+        (h.cues ? '<ul class="band-cues">' + h.cues.map(function (c) {
+          return '<li><span class="lamp" aria-hidden="true"></span><span class="stby" aria-hidden="true">' + esc(h.stby) + '</span><a href="' + esc(c.href) + '">' + esc(c.text) + ' <span aria-hidden="true">&rarr;</span></a></li>';
+        }).join("") + "</ul>" : "") +
         '<p class="band-sub">' + copy(h.sub) + "</p></div>" +
         '<a class="btn btn-primary band-cta" href="' + esc(h.cta.href) + '">' + esc(h.cta.label) + ' <span class="arrow" aria-hidden="true">&rarr;</span></a>' +
       "</div>";

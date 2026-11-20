@@ -227,7 +227,17 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
 /* ---------- hero band under the wall ---------- */
 .hero { position: relative; border-bottom: var(--rule); }
 .hero-inner { padding: 16px var(--wall-pad) 24px; }
-.band { display: grid; gap: 12px; }
+.band { display: grid; gap: 0; }
+/* Phones: the band's text children join the band's grid so the cues can sit under Register. */
+.band-text { display: contents; }
+.band h1 { order: 1; } .band-when { order: 2; } .band-sub { order: 3; } .band-cta { order: 4; margin-top: 12px; } .band-cues { order: 5; margin-top: 14px; }
+.band-cues { display: grid; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; }
+.band-cues li { display: flex; align-items: flex-start; gap: 8px; line-height: 1.35; }
+.band-cues .lamp { flex: 0 0 auto; margin-top: 0.5em; }
+.band-cues .stby { font-family: var(--mono); font-weight: 500; font-size: 0.8rem; flex: 0 0 auto; padding-top: 0.15em; }
+.band-cues a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; font-size: 0.98rem; }
+html:not([data-shot]) .band-cues a:hover { text-decoration-thickness: 3px; }
+.band-cues a:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .band h1 { font-size: 2.5rem; font-stretch: 105%; letter-spacing: -0.01em; margin-bottom: 8px; }
 .band-when { font-family: var(--mono); font-weight: 500; font-size: 0.95rem; margin: 0 0 6px; }
 .band-sub { margin: 0; max-width: 46ch; }
@@ -235,6 +245,10 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
 @media (min-width: 720px) {
   .hero-inner { padding-top: 24px; padding-bottom: 28px; }
   .band { grid-template-columns: 1fr auto; align-items: end; gap: 24px; }
+  /* Desktop: the cues sit under the date line; Register is pinned where it always was. */
+  .band-text { display: block; }
+  .band-cues { margin: 4px 0 10px; }
+  .band-cta { align-self: start; margin-top: 66px; }
   .band h1 { font-size: 3rem; }
   .band-when { font-size: 1.15rem; }
   .band-cta { width: auto; min-width: 200px; }
