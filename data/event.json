@@ -716,8 +716,8 @@
     "listen": "Listen",
     "try": "Try it",
     "record": "Record and compare",
-    "listening": "Listening. Say the phrase now.",
-    "recording": "Recording for 4 seconds. Say the phrase now.",
+    "listening": "Listening...",
+    "recording": "Listening...",
     "playing": "Playing your clip, then the voice.",
     "heard": "Heard:",
     "nailed": "Nailed it.",
@@ -732,7 +732,8 @@
       "es-US",
       "es-MX",
       "es-ES"
-    ]
+    ],
+    "done": "I'm done"
   },
   "registration": {
     "heading": "Register",

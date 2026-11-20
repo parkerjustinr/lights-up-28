@@ -409,6 +409,11 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .ph-en { font-size: 1.2rem; margin: 0 0 6px; max-width: 46ch; }
 .ph-say { font-family: var(--mono); font-weight: 500; font-size: 1.05rem; margin: 0; }
 .ph-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.ph-meter { display: inline-flex; align-items: flex-end; gap: 3px; height: 26px; align-self: center; }
+.ph-meter i { width: 6px; border: 1.5px solid var(--ink); background: transparent; }
+.ph-meter i:nth-child(1) { height: 30%; } .ph-meter i:nth-child(2) { height: 45%; } .ph-meter i:nth-child(3) { height: 62%; }
+.ph-meter i:nth-child(4) { height: 80%; } .ph-meter i:nth-child(5) { height: 100%; }
+.ph-meter i.on { background: var(--ink); }
 .ph-result:empty { display: none; }
 .ph-result { margin-top: 16px; }
 .ph-result p { margin: 0 0 6px; }

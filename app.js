@@ -672,7 +672,8 @@
           '<button type="button" class="btn btn-small" id="ph-next">' + esc(ph.next) + "</button></div></div>" +
         '<div class="ph-body" id="ph-body" aria-live="polite"></div>' +
         '<div class="ph-actions"><button type="button" class="btn btn-primary btn-small" id="ph-listen" hidden>' + esc(ph.listen) + "</button>" +
-          '<button type="button" class="btn btn-small" id="ph-try">' + esc(ph.try) + "</button></div>" +
+          '<button type="button" class="btn btn-small" id="ph-try">' + esc(ph.try) + "</button>" +
+          '<span class="ph-meter" id="ph-meter" aria-hidden="true" hidden><i></i><i></i><i></i><i></i><i></i></span></div>' +
         '<div class="ph-result" id="ph-result" aria-live="polite"></div>' +
       "</div>" +
       '<p class="ph-privacy">' + esc(ph.privacy) + "</p>");
@@ -734,63 +735,119 @@
       : esc(ph.again);
     $("ph-result").innerHTML = '<p class="ph-heard">' + esc(ph.heard) + " " + esc(best.t) + '</p><p class="ph-words" lang="es">' + words + '</p><p class="ph-msg">' + msg + "</p>";
   }
+  // Listening: keep every final and interim result until "I'm done" or 10 seconds, then grade once.
+  // A 5-bar meter follows the input level only. Every mic track stops when a try ends.
+  function phTryLabel() {
+    var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    return SR ? ph.try : ph.record;
+  }
+  function phMeterStart(stream) {
+    var AC = window.AudioContext || window.webkitAudioContext, bars = document.querySelectorAll("#ph-meter i");
+    $("ph-meter").hidden = false;
+    if (!AC || !stream) return;
+    try {
+      PH.ac = PH.ac || new AC();
+      if (PH.ac.resume) PH.ac.resume();
+      var an = PH.ac.createAnalyser(); an.fftSize = 512;
+      PH.ac.createMediaStreamSource(stream).connect(an);
+      var buf = new Uint8Array(an.fftSize);
+      (function tick() {
+        an.getByteTimeDomainData(buf);
+        var sum = 0;
+        for (var k = 0; k < buf.length; k++) { var v = (buf[k] - 128) / 128; sum += v * v; }
+        var level = Math.min(1, Math.sqrt(sum / buf.length) * 6);
+        Array.prototype.forEach.call(bars, function (bar, i) { bar.classList.toggle("on", level > (i + 0.5) / 5.5); });
+        PH.raf = requestAnimationFrame(tick);
+      })();
+    } catch (e) { /* no meter, listening still works */ }
+  }
   function phStopMic() {
     if (PH.stream) { PH.stream.getTracks().forEach(function (t) { t.stop(); }); PH.stream = null; }
-    if (PH.rec) { try { PH.rec.abort ? PH.rec.abort() : PH.rec.stop(); } catch (e) { /* already stopped */ } PH.rec = null; }
+    if (PH.rec) { var r = PH.rec; PH.rec = null; r.onend = r.onresult = r.onerror = null; try { r.abort(); } catch (e) { /* already stopped */ } }
+    if (PH.mr && PH.mr.state !== "inactive") { PH.mr.onstop = null; try { PH.mr.stop(); } catch (e) { /* done */ } }
+    PH.mr = null;
+    cancelAnimationFrame(PH.raf);
+    if (PH.ac) { try { PH.ac.close(); } catch (e) { /* closed */ } PH.ac = null; }
     clearTimeout(PH.timer);
     PH.busy = false;
     if ($("ph-try")) $("ph-try").disabled = false;
+    if ($("ph-meter")) { $("ph-meter").hidden = true; Array.prototype.forEach.call(document.querySelectorAll("#ph-meter i"), function (b) { b.classList.remove("on"); }); }
+    if ($("ph-try")) $("ph-try").textContent = phTryLabel();
   }
-  function phTry() {
+  function phStartTry() {
     var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (PH.busy) return;
-    PH.busy = true; $("ph-try").disabled = true;
+    PH.busy = true;
+    // Create the audio context inside the click, so the meter isn't blocked by autoplay rules.
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (AC && !PH.ac) { try { PH.ac = new AC(); } catch (e) { PH.ac = null; } }
+    $("ph-try").textContent = ph.done;
+    $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.listening) + "</p>";
+    var getMic = navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? navigator.mediaDevices.getUserMedia({ audio: true }) : Promise.reject(new Error("no mic"));
     if (SR) {
       var rec = new SR();
-      PH.rec = rec;
-      rec.lang = "es-EC"; rec.maxAlternatives = 3; rec.interimResults = false; rec.continuous = false;
-      var got = false;
+      PH.rec = rec; PH.list = [];
+      rec.lang = "es-EC"; rec.maxAlternatives = 3; rec.continuous = true; rec.interimResults = true;
       rec.onresult = function (e) {
-        got = true;
-        var alts = [], r = e.results[0];
-        for (var k = 0; k < r.length; k++) alts.push(r[k].transcript);
-        phJudge(alts);
-        try { rec.stop(); } catch (er) { /* done */ }
+        for (var k = 0; k < e.results.length; k++) {
+          var r = e.results[k], alts = [];
+          for (var a = 0; a < r.length; a++) alts.push(r[a].transcript);
+          PH.list[k] = alts;
+        }
       };
       rec.onerror = function (e) {
-        var msg = e && (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") ? ph.noMic : ph.noSpeech;
-        $("ph-result").innerHTML = '<p class="ph-msg">' + esc(msg) + "</p>";
+        if (e && (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture")) PH.micError = true;
       };
-      rec.onend = function () { if (!got && !$("ph-result").textContent) $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noSpeech) + "</p>"; PH.rec = null; phStopMic(); };
-      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.listening) + "</p>";
-      try { rec.start(); } catch (e) { phStopMic(); }
+      rec.onend = function () { phGrade(); };
+      PH.micError = false;
+      try { rec.start(); } catch (e) { phStopMic(); return; }
+      getMic.then(function (stream) { if (!PH.busy) { stream.getTracks().forEach(function (t) { t.stop(); }); return; } PH.stream = stream; phMeterStart(stream); })
+        .catch(function () { $("ph-meter").hidden = false; });
+      PH.timer = setTimeout(phDone, 10000);
       return;
     }
-    // No speech recognition (for example Firefox): record 4 seconds, play it back, then the voice.
-    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) {
-      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); return;
-    }
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+    // No speech recognition (for example Firefox): record until "I'm done" or 10 seconds, then play it back, then the voice.
+    if (!window.MediaRecorder) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); return; }
+    getMic.then(function (stream) {
+      if (!PH.busy) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
       PH.stream = stream;
+      phMeterStart(stream);
       var chunks = [], mr = new MediaRecorder(stream);
+      PH.mr = mr;
       mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
       mr.onstop = function () {
-        if (PH.stream) { PH.stream.getTracks().forEach(function (t) { t.stop(); }); PH.stream = null; }
-        var url = URL.createObjectURL(new Blob(chunks, { type: mr.mimeType || "audio/webm" })), au = new Audio(url);
+        var type = mr.mimeType || "audio/webm";
+        phStopMic();
+        PH.busy = true; $("ph-try").disabled = true;
+        var url = URL.createObjectURL(new Blob(chunks, { type: type })), au = new Audio(url);
         $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.playing) + "</p>";
-        var next = function () { URL.revokeObjectURL(url); phSpeak(ph.items[PH.i].es, function () { phStopMic(); }); };
+        var next = function () { URL.revokeObjectURL(url); phSpeak(ph.items[PH.i].es, function () { PH.busy = false; $("ph-try").disabled = false; }); };
         au.onended = next; au.onerror = next;
         au.play().catch(next);
       };
-      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.recording) + "</p>";
       mr.start();
-      PH.timer = setTimeout(function () { if (mr.state !== "inactive") mr.stop(); }, 4000);
+      PH.timer = setTimeout(phDone, 10000);
     }).catch(function () { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); });
   }
+  // "I'm done" or the 10 second limit.
+  function phDone() {
+    clearTimeout(PH.timer);
+    if (PH.rec) { try { PH.rec.stop(); } catch (e) { phGrade(); } return; }
+    if (PH.mr && PH.mr.state !== "inactive") { PH.mr.stop(); return; }
+    phStopMic();
+  }
+  function phGrade() {
+    var ph = D.phrases, list = (PH.list || []).filter(Boolean), micError = PH.micError;
+    phStopMic();
+    if (micError) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; return; }
+    if (!list.length) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noSpeech) + "</p>"; return; }
+    var cands = [0, 1, 2].map(function (a) { return list.map(function (alts) { return alts[a] || alts[0]; }).join(" ").replace(/\s+/g, " ").trim(); });
+    phJudge(cands.filter(function (c, k) { return c && cands.indexOf(c) === k; }));
+  }
+  function phTry() { if (PH.busy) phDone(); else phStartTry(); }
   function wirePhrases() {
     if (!$("ph-card")) return;
     var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) $("ph-try").textContent = ph.record;
+    $("ph-try").textContent = phTryLabel();
     phRender();
     $("ph-prev").addEventListener("click", function () { phStopMic(); PH.i = (PH.i - 1 + ph.items.length) % ph.items.length; phRender(); });
     $("ph-next").addEventListener("click", function () { phStopMic(); PH.i = (PH.i + 1) % ph.items.length; phRender(); });
