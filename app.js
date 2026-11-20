@@ -151,23 +151,24 @@
       return '<img src="' + esc(img(x.sp.photo, 720, 860)) + '" alt="" width="720" height="860" loading="eager" decoding="sync" data-cue="' + i + '"' + (i === state.cue ? "" : " hidden") + ">";
     }).join("");
     var strip = CUES.map(function (x, i) {
-      return '<li><button type="button" class="cue-btn" data-cue="' + i + '">' + esc(x.cue) + '<span class="cue-state" aria-hidden="true"></span></button></li>';
+      return '<li><button type="button" class="cue-btn" data-cue="' + i + '"><span class="cue-q">' + esc(x.cue) + '</span><span class="cue-state" aria-hidden="true"></span></button></li>';
     }).join("");
     $("hero-moment").innerHTML =
       '<div class="stage wall" id="wall" role="region" aria-label="Keynote wall">' +
         '<div class="stage-body">' +
+          '<p class="stage-numeral" id="wall-numeral" aria-hidden="true">' + esc(c.cue) + "</p>" +
           '<div class="stage-copy">' + stageCopy({ label: w.label, name: c.sp.name, title: c.s.title, cue: cueLine(c),
             nameId: "wall-name", titleId: "wall-title", cueId: "wall-cue",
             after: ' <a class="stage-link" id="wall-link" href="#session-' + esc(c.s.id) + '">' + esc(w.agendaLink) + "</a>" }) + "</div>" +
           '<div class="stage-photo" aria-hidden="true">' + photos + "</div>" +
           FIGURE +
-          '<button type="button" class="stage-save" id="wall-save">' + esc(w.saveLabel) + "</button>" +
         "</div>" +
         '<div class="stage-floor" aria-hidden="true"></div>' +
         '<div class="wall-controls">' +
           '<ol class="cue-strip" aria-label="Cues">' + strip + "</ol>" +
-          '<button type="button" class="go-btn" id="go-btn">' + esc(w.goText) + "</button>" +
+          '<button type="button" class="go-btn" id="go-btn"><span class="go-ring" aria-hidden="true"></span><span class="go-text">' + esc(w.goText) + "</span></button>" +
           '<p class="wall-caption">' + esc(w.caption) + "</p>" +
+          '<button type="button" class="stage-save" id="wall-save">' + esc(w.saveLabel) + "</button>" +
         "</div>" +
         '<p class="sr" aria-live="polite" id="wall-live"></p>' +
       "</div>";
@@ -188,6 +189,7 @@
     state.cue = i;
     var c = CUES[i], next = CUES[(i + 1) % n];
     $("wall-name").innerHTML = nameHtml(c.sp.name);
+    $("wall-numeral").textContent = c.cue;
     $("wall-title").textContent = c.s.title;
     $("wall-cue").textContent = cueLine(c);
     $("wall-link").setAttribute("href", "#session-" + c.s.id);
@@ -195,15 +197,17 @@
       im.hidden = +im.getAttribute("data-cue") !== i;
     });
     Array.prototype.forEach.call(document.querySelectorAll("#wall .cue-btn"), function (b) {
-      var k = +b.getAttribute("data-cue"), live = k === i, sb = k === (i + 1) % n;
+      var k = +b.getAttribute("data-cue"), live = k === i, sb = k === (i + 1) % n, called = k < i;
       var x = CUES[k];
       b.classList.toggle("is-live", live);
       b.classList.toggle("is-standby", sb);
+      b.classList.toggle("is-called", called);
       if (live) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
-      b.querySelector(".cue-state").textContent = live ? D.wall.live : sb ? D.wall.standby : "";
-      b.setAttribute("aria-label", x.cue + ", " + x.sp.name + (live ? ", " + D.wall.live : sb ? ", " + D.wall.standby : ""));
+      b.querySelector(".cue-state").innerHTML = sb ? '<span class="lamp"></span>' + esc(D.wall.standby) : "";
+      b.setAttribute("aria-label", x.cue + ", " + x.sp.name + (live ? ", " + D.wall.live : sb ? ", " + D.wall.standbyLong : called ? ", " + D.wall.called : ""));
     });
     $("go-btn").setAttribute("aria-label", D.wall.goText + ": call " + next.cue + ", " + next.sp.name);
+    fitNames();
     if (announce) {
       var live = $("wall-live");
       live.textContent = "";
@@ -211,16 +215,45 @@
     }
   }
 
+  // Names fit by narrowing the Anybody width axis, never by shrinking the size.
+  // Desktop: one line. Phone: each word on its own line. Instant, not motion.
+  var WDTH_MAX = 110, WDTH_MIN = 60;
+  function fitName(el) {
+    if (!el) return;
+    var w = WDTH_MAX;
+    el.style.fontStretch = w + "%";
+    var box = el.clientWidth;
+    function over() {
+      var parts = el.querySelectorAll(".nm"), wide = el.scrollWidth > box + 1;
+      for (var k = 0; k < parts.length && !wide; k++) if (parts[k].getBoundingClientRect().width > box + 1) wide = true;
+      return wide;
+    }
+    while (over() && w > WDTH_MIN) { w -= 5; el.style.fontStretch = w + "%"; }
+  }
+  function fitNames() { Array.prototype.forEach.call(document.querySelectorAll(".stage-name"), fitName); }
+
+  // GO lamp: the ring lights solid on press and fades back over 400ms (tier 1).
+  // At most one flash every 340ms, so never more than 3 a second.
+  var lastFire = 0;
+  function fireGo() {
+    var b = $("go-btn"), now = performance.now();
+    if (SHOT || now - lastFire < 340) return;
+    lastFire = now;
+    b.classList.add("is-fired");
+    void b.offsetWidth;
+    requestAnimationFrame(function () { requestAnimationFrame(function () { b.classList.remove("is-fired"); }); });
+  }
+
   function wireWall() {
     var wall = $("wall");
     if (!wall) return;
-    $("go-btn").addEventListener("click", function () { cutTo(state.cue + 1, true); });
+    $("go-btn").addEventListener("click", function () { fireGo(); cutTo(state.cue + 1, true); });
     Array.prototype.forEach.call(wall.querySelectorAll(".cue-btn"), function (b) {
       b.addEventListener("click", function () { cutTo(+b.getAttribute("data-cue"), true); });
     });
     $("wall-save").addEventListener("click", function () {
       var c = CUES[state.cue];
-      saveCard({ label: D.wall.label, name: c.sp.name, title: c.s.title, cue: cueLine(c), photo: c.sp.photo },
+      saveCard({ label: D.wall.label, name: c.sp.name, title: c.s.title, cue: cueLine(c), photo: c.sp.photo, numeral: c.cue },
         D.meta.shortName + "-" + c.cue.toLowerCase() + ".png");
     });
   }
@@ -231,31 +264,29 @@
   R.about = function () {
     var a = D.about;
     return sectionShell("about", a.heading,
-      (a.statement ? '<p class="about-statement">' + copy(a.statement) + "</p>" : "") +
       '<div class="about-copy">' + a.paragraphs.map(function (p) { return "<p>" + copy(p) + "</p>"; }).join("") + "</div>");
   };
 
   R.speakers = function () {
     var sp = D.speakers, map = speakerSessions();
-    function agendaLink(id) {
-      var first = (map[id] || [])[0];
-      return first ? '<a class="sp-agenda" href="#session-' + esc(first.s.id) + '">' + esc(sp.agendaLink) + "</a>" : "";
+    function first(id) { return (map[id] || [])[0]; }
+    function card(p, cls, w, h) {
+      var f = first(p.id);
+      return '<li class="sp-card ' + cls + '" id="speaker-' + p.id + '">' +
+        (f && f.s.cue ? '<p class="sp-cue">' + esc(f.s.cue) + "</p>" : "") +
+        '<div class="sp-photo duo">' + (p.photo
+          ? '<img src="' + esc(img(p.photo, w, h)) + '" alt="' + esc(p.name) + '" width="' + w + '" height="' + h + '" loading="' + imgLoading(false) + '">'
+          : '<span class="sp-initials" aria-hidden="true">' + esc(initials(p.name)) + "</span>") + "</div>" +
+        '<h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + '</p><p class="sp-company">' + esc(p.company) + "</p>" +
+        (f ? '<a class="sp-agenda" href="#session-' + esc(f.s.id) + '">' + esc(sp.agendaLink) + "</a>" : "") + "</li>";
     }
-    function photo(p, w, h) {
-      return p.photo
-        ? '<img class="sp-photo" src="' + esc(img(p.photo, w, h)) + '" alt="' + esc(p.name) + '" width="' + w + '" height="' + h + '" loading="' + imgLoading(false) + '">'
-        : '<div class="sp-photo sp-initials" aria-hidden="true">' + esc(initials(p.name)) + "</div>";
-    }
-    function body(p) {
-      return '<h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + '</p><p class="sp-company">' + esc(p.company) + "</p>" + agendaLink(p.id);
-    }
-    var first = sp.items[0], rest = sp.items.slice(1);
-    var featured = first ? '<article class="sp-featured" id="speaker-' + first.id + '">' + photo(first, 640, 800) +
-      '<div class="sp-body">' + body(first) + "</div></article>" : "";
-    var grid = '<ul class="sp-grid">' + rest.map(function (p) {
-      return '<li class="sp-card" id="speaker-' + p.id + '">' + photo(p, 480, 480) + body(p) + "</li>";
-    }).join("") + "</ul>";
-    return sectionShell("speakers", sp.heading, (sp.intro ? '<p class="lede">' + copy(sp.intro) + "</p>" : "") + featured + grid);
+    var keynote = sp.items.filter(function (p) { var f = first(p.id); return f && f.s.cue; });
+    keynote.sort(function (a, b) { return parseInt(first(a.id).s.cue.slice(1), 10) - parseInt(first(b.id).s.cue.slice(1), 10); });
+    var others = sp.items.filter(function (p) { return keynote.indexOf(p) < 0; });
+    return sectionShell("speakers", sp.heading,
+      (sp.intro ? '<p class="lede">' + copy(sp.intro) + "</p>" : "") +
+      '<h3 class="sp-group">' + esc(sp.keynoteHeading) + '</h3><ul class="sp-grid sp-keynotes">' + keynote.map(function (p) { return card(p, "is-keynote", 480, 600); }).join("") + "</ul>" +
+      '<h3 class="sp-group">' + esc(sp.boothHeading) + '</h3><ul class="sp-grid sp-booth">' + others.map(function (p) { return card(p, "is-booth", 360, 360); }).join("") + "</ul>");
   };
 
   R.schedule = function () {
@@ -331,13 +362,6 @@
     if (!v || v === "no") return '<span class="no" aria-hidden="true">-</span><span class="sr">Not included</span>';
     return '<span class="val">' + esc(v) + "</span>";
   }
-  // Computed row: how many agenda items each registration type can attend, counted from session tiers.
-  function sessionsForTier(tierId) {
-    var n = 0;
-    D.schedule.days.forEach(function (day) { day.sessions.forEach(function (s) { if (!s.tiers || s.tiers.indexOf(tierId) > -1) n++; }); });
-    return n;
-  }
-
   R.tickets = function () {
     var t = D.tickets;
     state.tier = state.tier || t.recommended || t.tiers[0].id;
@@ -357,10 +381,7 @@
         t.tiers.map(function (tier) { return '<td class="c-' + tier.id + '" data-tier="' + esc(tier.name) + '">' + cell(row.tiers[tier.id]) + "</td>"; }).join("") + "</tr>" +
         '<tr class="m-detail" id="detail-' + row.id + '" hidden><td colspan="' + (t.tiers.length + 1) + '"><div class="pv">' + rowPreviewHtml(row) + "</div></td></tr>";
     });
-    var computed = t.computedRow ? '<tfoot><tr><th scope="row">' + esc(t.computedRow) + "</th>" + t.tiers.map(function (tier) {
-      return '<td class="c-' + tier.id + '" data-tier="' + esc(tier.name) + '">' + sessionsForTier(tier.id) + "</td>";
-    }).join("") + "</tr></tfoot>" : "";
-    var table = '<table class="matrix" id="matrix" style="--tiers:' + t.tiers.length + '"><caption class="sr">What each registration type includes</caption>' + head + "<tbody>" + body + "</tbody>" + computed + "</table>";
+    var table = '<table class="matrix" id="matrix" style="--tiers:' + t.tiers.length + '"><caption class="sr">What each registration type includes</caption>' + head + "<tbody>" + body + "</tbody></table>";
     var preview = '<aside class="preview" id="preview" aria-live="polite" aria-label="Row preview"><p class="pv-empty">Hover or focus a row to see exactly what it covers.</p></aside>';
     return sectionShell("tickets", t.heading,
       (t.intro ? '<p class="lede">' + copy(t.intro) + "</p>" : "") +
@@ -384,8 +405,9 @@
     var v = D.venue, f = v.feature;
     return sectionShell("venue", v.heading,
       (v.intro ? '<p class="lede">' + copy(v.intro) + "</p>" : "") +
-      (f ? '<div class="venue-feature"><h3>' + esc(f.title) + (f.tag ? ' <span class="venue-tag">' + esc(f.tag) + "</span>" : "") + "</h3><p>" + copy(f.body) + "</p></div>" : "") +
-      '<dl class="ruled">' + v.items.map(function (x) { return "<div><dt>" + esc(x.title) + "</dt><dd>" + copy(x.body) + "</dd></div>"; }).join("") + "</dl>" +
+      '<div class="venue-layout">' +
+      (f ? '<div class="venue-feature">' + (f.tag ? '<p class="venue-tag">' + esc(f.tag) + "</p>" : "") + "<h3>" + esc(f.title) + "</h3><p>" + copy(f.body) + "</p></div>" : "") +
+      '<dl class="ruled">' + v.items.map(function (x) { return "<div><dt>" + esc(x.title) + "</dt><dd>" + copy(x.body) + "</dd></div>"; }).join("") + "</dl></div>" +
       (v.mapLink ? '<a class="btn btn-small" href="' + esc(v.mapLink) + '">Open in maps</a>' : ""));
   };
 
@@ -422,9 +444,10 @@
 
   R.faq = function () {
     var f = D.faq;
-    return sectionShell("faq", f.heading, '<div class="faq-list">' + f.items.map(function (x) {
+    return '<section class="section sec-faq" id="faq" aria-labelledby="faq-title"><div class="wrap faq-layout">' +
+      '<h2 class="section-title" id="faq-title">' + copy(f.heading) + '</h2><div class="faq-list">' + f.items.map(function (x) {
       return '<details class="faq-item"><summary><span>' + copy(x.q) + '</span><span class="q-icon" aria-hidden="true">+</span></summary><div class="a"><p>' + copy(x.a) + "</p></div></details>";
-    }).join("") + "</div>");
+    }).join("") + "</div></div></section>";
   };
 
   // ---------- wiring ----------
@@ -554,6 +577,7 @@
           return '<button type="button" class="btn btn-small" data-ics-day="' + d.id + '" data-ics-tier="' + rec.tier.id + '">Add ' + esc(d.title) + " to calendar</button>";
         }).join("") + '<button type="button" class="btn btn-small" id="reg-again">' + esc(c.againLabel) + "</button></div>" +
       "</div>";
+    fitNames();
     if (focus) {
       var card = $("reg-confirm"), header = document.querySelector(".site-header");
       var top = card.getBoundingClientRect().top + window.pageYOffset - (header ? header.getBoundingClientRect().height : 0) - 16;
@@ -576,8 +600,16 @@
     if (!target) return false;
     var panel = target.closest('[role="tabpanel"]');
     if (panel && panel.hidden && $(panel.getAttribute("aria-labelledby"))) selectTab($(panel.getAttribute("aria-labelledby")), false);
-    Array.prototype.forEach.call(document.querySelectorAll(".session.is-lit"), function (el) { if (el !== target) el.classList.remove("is-lit"); });
-    target.classList.add("is-lit");
+    Array.prototype.forEach.call(document.querySelectorAll(".session.is-lit"), function (el) {
+      if (el === target) return;
+      el.classList.remove("is-lit");
+      var tag = el.querySelector(".s-live");
+      if (tag) tag.remove();
+    });
+    if (!target.classList.contains("is-lit")) {
+      target.classList.add("is-lit");
+      target.querySelector(".s-time").insertAdjacentHTML("beforeend", '<span class="s-live">' + esc(D.schedule.liveTag) + "</span>");
+    }
     target.setAttribute("tabindex", "-1");
     var header = document.querySelector(".site-header");
     var off = SHOT || !header ? 16 : header.getBoundingClientRect().height + 16;
@@ -637,7 +669,7 @@
     $("sections").innerHTML = on.map(function (s) { return R[s.id](); }).join("");
     $("footer").innerHTML = '<div class="wrap footer-inner"><p class="footer-word">' + esc(m.host) + "</p>" +
       '<nav aria-label="Footer"><ul class="footer-links">' + on.map(function (s) { return '<li><a href="#' + s.id + '">' + esc(s.label) + "</a></li>"; }).join("") + "</ul></nav>" +
-      '<p class="footer-small">' + esc(m.name) + " · " + esc(m.dateLine) + "</p>" +
+      '<p class="footer-small mono">' + esc(m.name) + " · " + esc(m.dateLine) + "</p>" +
       '<p class="footer-small">' + esc(m.footerLine || "") + "</p></div>";
   }
 
@@ -672,28 +704,38 @@
   }
   function saveCard(o, filename) {
     var W = 1200, H = 630, P = 56;
-    var host = cssVar("--host", "#2340FF"), onHost = cssVar("--on-host", "#FFFFFF");
-    var display = cssVar("--display", "sans-serif"), body = cssVar("--body", "sans-serif");
+    var host = cssVar("--host", "#1B3BFF"), onHost = cssVar("--on-host", "#FFFFFF"), ink = cssVar("--ink", "#101218");
+    var numeralColor = cssVar("--host-tint", "#3653FF");
+    var display = cssVar("--display", "sans-serif"), body = cssVar("--body", "sans-serif"), mono = cssVar("--mono", "monospace");
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
     Promise.all([fontsReady, loadImage(o.photo ? img(o.photo, 720, 860) : "")]).then(function (r) {
       var photo = r[1];
       var cv = document.createElement("canvas");
       cv.width = W; cv.height = H;
       var ctx = cv.getContext("2d");
+      var canStretch = "fontStretch" in ctx;
+      function setFont(spec, stretch) { ctx.font = spec; if (canStretch) ctx.fontStretch = stretch || "normal"; }
       ctx.fillStyle = host; ctx.fillRect(0, 0, W, H);
       var floorY = H - 96, textW = W - P * 2;
+      // The cue numeral behind the name, cut off by the floor line.
+      if (o.numeral) {
+        ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, floorY); ctx.clip();
+        ctx.fillStyle = numeralColor; setFont("800 400px " + display);
+        ctx.fillText(o.numeral, P - 20, floorY + 90);
+        ctx.restore();
+      }
       if (photo) {
-        // Duotone: grayscale the photo, then multiply it with the host color.
+        // Duotone, ink to host: luminance picks a point between the two colors.
         var pw = 380, ph = floorY - P, px = W - P - pw, py = P;
         var s = Math.max(pw / photo.width, ph / photo.height), sw = pw / s, sh = ph / s;
         var off = document.createElement("canvas"); off.width = pw; off.height = ph;
         var o2 = off.getContext("2d");
-        o2.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 2, sw, sh, 0, 0, pw, ph);
+        o2.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 4, sw, sh, 0, 0, pw, ph);
         try {
-          var data = o2.getImageData(0, 0, pw, ph), d = data.data, hc = hexRgb(host);
+          var data = o2.getImageData(0, 0, pw, ph), d = data.data, hc = hexRgb(host), ic = hexRgb(ink);
           for (var i = 0; i < d.length; i += 4) {
-            var l = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
-            d[i] = hc[0] * l; d[i + 1] = hc[1] * l; d[i + 2] = hc[2] * l;
+            var l = Math.min(1, ((0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255) * 1.08);
+            d[i] = ic[0] + (hc[0] - ic[0]) * l; d[i + 1] = ic[1] + (hc[1] - ic[1]) * l; d[i + 2] = ic[2] + (hc[2] - ic[2]) * l;
           }
           o2.putImageData(data, 0, 0);
           ctx.drawImage(off, px, py);
@@ -702,22 +744,23 @@
       }
       ctx.fillStyle = onHost;
       ctx.textBaseline = "alphabetic";
-      ctx.font = "800 56px " + display;
+      setFont("800 56px " + display, "semi-expanded");
       ctx.fillText(o.label, P, P + 50);
-      // Name: as big as fits, one line if it can, else two.
-      var size = 120, n = splitName(o.name), lines;
-      ctx.font = "800 " + size + "px " + display;
-      while (size > 64 && ctx.measureText(o.name).width > textW) { size -= 4; ctx.font = "800 " + size + "px " + display; }
-      lines = ctx.measureText(o.name).width > textW ? [n.first, n.last] : [o.name];
+      // Name: 110px, narrowed (not shrunk) to fit one line; two lines only as a last resort.
+      var size = 110, n = splitName(o.name), lines = [o.name];
+      var widths = ["semi-expanded", "normal", "semi-condensed", "condensed", "extra-condensed"], wi = 0;
+      setFont("800 " + size + "px " + display, widths[wi]);
+      while (ctx.measureText(o.name).width > textW && wi < widths.length - 1) { wi++; setFont("800 " + size + "px " + display, widths[wi]); }
+      if (ctx.measureText(o.name).width > textW) lines = [n.first, n.last];
       var y = P + 50 + 24 + size * 0.86;
       lines.forEach(function (ln, k) { ctx.fillText(ln, P, y + k * size * 0.92); });
       y += (lines.length - 1) * size * 0.92 + 56;
-      ctx.font = "600 32px " + body;
+      setFont("700 32px " + body);
       wrapLines(ctx, o.title, textW).slice(0, 3).forEach(function (ln, k) { ctx.fillText(ln, P, y + k * 40); });
       ctx.fillRect(P, floorY, W - P * 2, 3);
-      ctx.font = "600 24px " + body;
+      setFont("500 24px " + mono);
       ctx.fillText(o.cue, P, floorY + 50);
-      ctx.font = "800 24px " + display;
+      setFont("800 26px " + display, "semi-expanded");
       var mark = D.meta.host;
       ctx.fillText(mark, W - P - ctx.measureText(mark).width, floorY + 50);
       // Standing figure on the floor line, for scale.
@@ -746,6 +789,7 @@
     if (!SHOT) return;
     var fonts = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
     fonts.then(function () {
+      fitNames();
       root.setAttribute("data-shot-fonts", "1");
       var imgs = Array.prototype.slice.call(document.images);
       return Promise.all(imgs.map(function (im) {
@@ -778,6 +822,9 @@
       renderChrome();
       wireWall(); wireTabs(); wireMatrix(); wireForm(); wireGlobal();
       applyNameParam();
+      fitNames();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNames);
+      window.addEventListener("resize", fitNames);
       markShotReady();
       if (!SHOT && location.hash.length > 1) {
         var id = location.hash.slice(1);
