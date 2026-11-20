@@ -3,11 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Event</title>
-  <meta name="description" content="">
+  <title>Lights Up '28 - Tarnell's customer conference, Quito</title>
+  <meta name="description" content="Lights Up '28 is Tarnell's free customer conference for operations leaders, Apr 11-12, 2028 at Nave Carolina in Quito. Six customers give the keynotes, and you call the cues.">
+  <script>
+    // URL switches that must apply before first paint (see CLAUDE.md).
+    (function () {
+      var q = new URLSearchParams(location.search), h = document.documentElement;
+      if (q.get("shot") === "1") h.setAttribute("data-shot", "1");
+      if (q.get("motion") === "full") h.setAttribute("data-motion", "full");
+    })();
+  </script>
   <!-- FONTS: swap these two families in the design pass. Keep one display face + one body face. -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Public+Sans:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -18,13 +27,13 @@
   <header class="site-header">
     <a class="brand" href="#top" id="brand"></a>
     <nav aria-label="Sections"><ul class="nav-list" id="nav"></ul></nav>
-    <a class="btn btn-primary btn-small header-cta" href="#tickets" id="header-cta">Tickets</a>
+    <a class="btn btn-primary btn-small header-cta" href="#register" id="header-cta">Register</a>
   </header>
 
   <main id="main" tabindex="-1">
     <section class="hero" id="top" aria-labelledby="hero-title">
-      <!-- HERO MOMENT: the one "slightly too much" element goes in #hero-moment. -->
-      <div class="hero-moment" id="hero-moment" aria-hidden="true"></div>
+      <!-- HERO MOMENT: the keynote wall renders into #hero-moment. -->
+      <div class="hero-moment" id="hero-moment"></div>
       <div class="hero-inner" id="hero"></div>
     </section>
     <div id="sections"></div>

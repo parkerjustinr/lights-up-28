@@ -1,6 +1,6 @@
 # Event site
 
-One-page event site. Plain HTML, CSS and vanilla JS, no build step. All content lives in `data/event.json`.
+Lights Up '28, a fictional customer conference by the fictional company Tarnell. One-page site: plain HTML, CSS and vanilla JS, no build step. All content lives in `data/event.json`.
 
 ## Run locally
 The page loads its content with `fetch`, so serve the folder instead of opening the file:

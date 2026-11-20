@@ -1,167 +1,198 @@
 {
   "meta": {
-    "name": "Sample Event",
-    "shortName": "SE",
-    "year": "2026",
-    "tagline": "[PLACEHOLDER] One line that says what this event is and who it is for.",
-    "timezone": "America/New_York",
-    "tzLabel": "ET",
-    "dates": "Sat, Nov 14 - Sun, Nov 15, 2026",
-    "venue": "Sample Venue",
-    "city": "City, ST",
-    "address": "123 Sample St, City, ST 00000",
-    "pageTitle": "Sample Event 2026 - City, ST",
-    "description": "[PLACEHOLDER] Meta description: what, when, where, in one sentence.",
-    "placeholderNotice": "Sample content. Every name, time, and price on this page is placeholder.",
-    "footerLine": "Event site concept built on Arrived."
+    "name": "Lights Up '28",
+    "shortName": "lights-up-28",
+    "host": "Tarnell",
+    "year": "2028",
+    "timezone": "America/Guayaquil",
+    "tzLabel": "ECT",
+    "dateLine": "Apr 11-12, 2028 · Nave Carolina, Quito",
+    "venue": "Nave Carolina",
+    "city": "Iñaquito, Quito, Ecuador",
+    "pageTitle": "Lights Up '28 - Tarnell's customer conference, Quito",
+    "description": "Lights Up '28 is Tarnell's free customer conference for operations leaders, Apr 11-12, 2028 at Nave Carolina in Quito. Six customers give the keynotes, and you call the cues.",
+    "icsStamp": "20280101T000000Z",
+    "footerLine": "Fictional event. Tarnell, Nave Carolina, and every person and company here are invented."
   },
 
   "sections": [
     { "id": "about", "label": "About", "on": true },
     { "id": "speakers", "label": "Speakers", "on": true },
-    { "id": "schedule", "label": "Schedule", "on": true },
-    { "id": "tickets", "label": "Tickets", "on": true },
-    { "id": "sponsors", "label": "Sponsors", "on": true },
+    { "id": "schedule", "label": "Agenda", "on": true },
+    { "id": "tickets", "label": "Passes", "on": true },
+    { "id": "sponsors", "label": "Sponsors", "on": false },
     { "id": "venue", "label": "Getting there", "on": true },
     { "id": "register", "label": "Register", "on": true },
     { "id": "faq", "label": "FAQ", "on": true }
   ],
 
+  "header": { "cta": { "label": "Register", "href": "#register" } },
+
+  "wall": {
+    "label": "LIGHTS UP",
+    "caption": "Press GO to call the next keynote.",
+    "goText": "GO",
+    "standby": "standby",
+    "live": "live",
+    "agendaLink": "See in agenda",
+    "saveLabel": "Save card"
+  },
+
   "hero": {
-    "title": ["Sample", "Event"],
-    "sub": "[PLACEHOLDER] Two sentences max. What happens, who should come, why this year.",
-    "primaryCta": { "label": "Get tickets", "href": "#tickets" },
-    "secondaryCta": { "label": "See the schedule", "href": "#schedule" },
-    "facts": [
-      { "value": "2", "label": "Days" },
-      { "value": "24", "label": "Sessions" },
-      { "value": "12", "label": "Speakers" },
-      { "value": "600", "label": "Seats" }
-    ]
+    "title": "Lights Up '28",
+    "sub": "Tarnell's customer conference. Customers give every keynote.",
+    "cta": { "label": "Register", "href": "#register" }
   },
 
   "about": {
-    "heading": "[PLACEHOLDER] About heading that says something specific",
+    "heading": "Customers run the show",
+    "statement": "Six keynotes. Six customers. You call the cues.",
     "paragraphs": [
-      "[PLACEHOLDER] First paragraph. The one thing that makes this event different.",
-      "[PLACEHOLDER] Second paragraph. What a first-timer should expect."
+      "Lights Up '28 is Tarnell's customer conference, free for Tarnell customers. Nobody from Tarnell gives a main-stage keynote. The six people on the wall run buses, hospitals, arenas, lifts, breweries and ferries, and they will show how they actually do it.",
+      "Two days in Quito for operations leaders from many countries: keynotes on the Main Stage, smaller breakouts in The Booth, and hands-on labs in the Lab with Tarnell engineers."
     ]
   },
 
   "tracks": [
     { "id": "main", "name": "Main Stage" },
-    { "id": "studio", "name": "Studio" },
-    { "id": "social", "name": "Social" }
+    { "id": "booth", "name": "The Booth" },
+    { "id": "lab", "name": "Lab" }
   ],
 
   "speakers": {
     "heading": "Speakers",
-    "intro": "[PLACEHOLDER] One line on who is speaking and why it matters.",
+    "intro": "Ten Tarnell customers. Six on the Main Stage, four in The Booth.",
+    "agendaLink": "See in agenda",
     "items": [
-      { "id": "sp1", "name": "Speaker One", "role": "Title, Organization", "bio": "[PLACEHOLDER] Two-line bio for the featured speaker. This person gets the big slot.", "photo": "", "link": "" },
-      { "id": "sp2", "name": "Speaker Two", "role": "Title, Organization", "bio": "[PLACEHOLDER] Short bio.", "photo": "", "link": "" },
-      { "id": "sp3", "name": "Speaker Three", "role": "Title, Organization", "bio": "[PLACEHOLDER] Short bio.", "photo": "", "link": "" },
-      { "id": "sp4", "name": "Speaker Four", "role": "Title, Organization", "bio": "[PLACEHOLDER] Short bio.", "photo": "", "link": "" },
-      { "id": "sp5", "name": "Speaker Five", "role": "Title, Organization", "bio": "[PLACEHOLDER] Short bio.", "photo": "", "link": "" },
-      { "id": "sp6", "name": "Speaker Six", "role": "Title, Organization", "bio": "[PLACEHOLDER] Short bio.", "photo": "", "link": "" }
+      { "id": "sp1", "name": "Rosa Ibarra", "role": "VP Operations", "company": "Northline Transit", "photo": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604" },
+      { "id": "sp2", "name": "Dev Malhotra", "role": "Facilities Lead", "company": "Kestow Health", "photo": "https://images.unsplash.com/photo-1629425733761-caae3b5f2e50" },
+      { "id": "sp3", "name": "June Okafor", "role": "Production Manager", "company": "Wexley Arena", "photo": "https://images.unsplash.com/photo-1531123897727-8f129e1688ce" },
+      { "id": "sp4", "name": "Tomas Rehn", "role": "Head of Field Service", "company": "Corvan Lifts", "photo": "https://images.unsplash.com/photo-1560250097-0b93528c311a" },
+      { "id": "sp5", "name": "Priya Nandan", "role": "COO", "company": "Fernhill Brewing", "photo": "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df" },
+      { "id": "sp6", "name": "Marcus Lyle", "role": "Operations Director", "company": "Saltmarsh Ferries", "photo": "https://images.unsplash.com/photo-1614289371518-722f2615943d" },
+      { "id": "sp7", "name": "Lucía Vera", "role": "Dispatch Supervisor", "company": "Cordillera Water, Bogotá", "photo": "https://images.unsplash.com/photo-1607746882042-944635dfe10e" },
+      { "id": "sp8", "name": "Mateo Saltos", "role": "Maintenance Planner", "company": "Ruta Andina Rail, Guayaquil", "photo": "https://images.unsplash.com/photo-1618077360395-f3068be8e001" },
+      { "id": "sp9", "name": "Hana Brandt", "role": "Shift Lead", "company": "Ostkai Terminals, Hamburg", "photo": "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91" },
+      { "id": "sp10", "name": "Nico Ramos", "role": "Service Desk Manager", "company": "Brightwell Venues, Toronto", "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d" }
     ]
   },
 
   "schedule": {
-    "heading": "Schedule",
-    "note": "[PLACEHOLDER] Times are draft.",
+    "heading": "Agenda",
+    "note": "Keynotes are 40 minutes on the Main Stage. Doors open at 8:00 AM both days.",
     "days": [
       {
         "id": "d1",
-        "label": "Day 1",
-        "date": "2026-11-14",
-        "title": "Saturday, Nov 14",
+        "label": "Tue",
+        "short": "Tue",
+        "date": "2028-04-11",
+        "title": "Tuesday, Apr 11",
         "sessions": [
-          { "id": "s101", "start": "09:00", "end": "10:00", "title": "Doors and check-in", "track": "social", "speakers": [], "detail": "[PLACEHOLDER] Badge pickup at the front desk.", "tiers": ["full", "day1", "vip"] },
-          { "id": "s102", "start": "10:00", "end": "10:45", "title": "Opening keynote", "track": "main", "speakers": ["sp1"], "detail": "[PLACEHOLDER] Session description.", "tiers": ["full", "day1", "vip"] },
-          { "id": "s103", "start": "11:00", "end": "12:00", "title": "Panel session", "track": "main", "speakers": ["sp2", "sp3"], "detail": "[PLACEHOLDER] Session description.", "tiers": ["full", "day1", "vip"] },
-          { "id": "s104", "start": "11:00", "end": "12:30", "title": "Hands-on workshop", "track": "studio", "speakers": ["sp4"], "detail": "[PLACEHOLDER] Limited seats.", "tiers": ["full", "vip"] },
-          { "id": "s105", "start": "12:30", "end": "13:30", "title": "Lunch", "track": "social", "speakers": [], "detail": "[PLACEHOLDER] Included with Full and VIP.", "tiers": ["full", "vip"] },
-          { "id": "s106", "start": "14:00", "end": "15:00", "title": "Fireside chat", "track": "main", "speakers": ["sp5"], "detail": "[PLACEHOLDER] Session description.", "tiers": ["full", "day1", "vip"] },
-          { "id": "s107", "start": "18:00", "end": "20:00", "title": "Speaker dinner", "track": "social", "speakers": ["sp1", "sp6"], "detail": "[PLACEHOLDER] VIP only.", "tiers": ["vip"] }
+          { "id": "s101", "start": "08:00", "end": "09:00", "title": "Doors and coffee", "track": null, "speakers": [], "detail": "Badge pickup at the front desk. Coffee in the foyer.", "tiers": ["customer", "lab", "team"] },
+          { "id": "s102", "start": "09:00", "end": "09:40", "cue": "Q1", "title": "Running 600 buses from one screen", "track": "main", "speakers": ["sp1"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s103", "start": "10:00", "end": "10:45", "title": "Moving field crews from radio to one dispatch board", "track": "booth", "speakers": ["sp7"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s104", "start": "10:00", "end": "11:30", "title": "Lab: Build a live status board for your own sites", "track": "lab", "speakers": [], "detail": "Led by Tarnell engineers. Bring a laptop.", "tiers": ["lab"] },
+          { "id": "s105", "start": "11:00", "end": "11:40", "cue": "Q2", "title": "Night shift has the best data", "track": "main", "speakers": ["sp2"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s106", "start": "12:00", "end": "13:00", "title": "Lunch", "track": null, "speakers": [], "detail": "In the main hall. Tell us about dietary needs when you register.", "tiers": ["customer", "lab", "team"] },
+          { "id": "s107", "start": "13:00", "end": "13:45", "title": "Planning track maintenance around a four-hour night window", "track": "booth", "speakers": ["sp8"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s108", "start": "14:00", "end": "14:40", "cue": "Q3", "title": "Load-in, load-out, 212 times a year", "track": "main", "speakers": ["sp3"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s109", "start": "15:00", "end": "15:45", "title": "Writing shift handovers people read", "track": "booth", "speakers": ["sp9"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s110", "start": "15:00", "end": "16:30", "title": "Lab: Set up alerts that wake the right person", "track": "lab", "speakers": [], "detail": "Led by Tarnell engineers. Bring a laptop.", "tiers": ["lab"] },
+          { "id": "s111", "start": "18:30", "end": "21:30", "title": "Opening night at Nave Carolina", "track": null, "speakers": [], "detail": "Food, drinks and the six keynote speakers in one room.", "tiers": ["customer", "lab", "team"] }
         ]
       },
       {
         "id": "d2",
-        "label": "Day 2",
-        "date": "2026-11-15",
-        "title": "Sunday, Nov 15",
+        "label": "Wed",
+        "short": "Wed",
+        "date": "2028-04-12",
+        "title": "Wednesday, Apr 12",
         "sessions": [
-          { "id": "s201", "start": "09:30", "end": "10:00", "title": "Doors", "track": "social", "speakers": [], "detail": "[PLACEHOLDER] Coffee in the lobby.", "tiers": ["full", "day2", "vip"] },
-          { "id": "s202", "start": "10:00", "end": "11:00", "title": "Morning keynote", "track": "main", "speakers": ["sp6"], "detail": "[PLACEHOLDER] Session description.", "tiers": ["full", "day2", "vip"] },
-          { "id": "s203", "start": "11:15", "end": "12:30", "title": "Studio session", "track": "studio", "speakers": ["sp3", "sp4"], "detail": "[PLACEHOLDER] Limited seats.", "tiers": ["full", "vip"] },
-          { "id": "s204", "start": "13:30", "end": "14:30", "title": "Closing talk", "track": "main", "speakers": ["sp2"], "detail": "[PLACEHOLDER] Session description.", "tiers": ["full", "day2", "vip"] },
-          { "id": "s205", "start": "15:00", "end": "17:00", "title": "Closing party", "track": "social", "speakers": [], "detail": "[PLACEHOLDER] Everyone welcome.", "tiers": ["full", "day2", "vip"] }
+          { "id": "s201", "start": "08:00", "end": "09:00", "title": "Doors and coffee", "track": null, "speakers": [], "detail": "Coffee in the foyer.", "tiers": ["customer", "lab", "team"] },
+          { "id": "s202", "start": "09:00", "end": "09:40", "cue": "Q4", "title": "The elevator called us first", "track": "main", "speakers": ["sp4"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s203", "start": "10:00", "end": "10:45", "title": "Running service tickets for 30 venues with one team", "track": "booth", "speakers": ["sp10"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s204", "start": "10:00", "end": "11:30", "title": "Lab: Plan a maintenance week with work orders", "track": "lab", "speakers": [], "detail": "Led by Tarnell engineers. Bring a laptop.", "tiers": ["lab"] },
+          { "id": "s205", "start": "11:00", "end": "11:40", "cue": "Q5", "title": "Four plants, one 7 AM standup", "track": "main", "speakers": ["sp5"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s206", "start": "12:00", "end": "13:00", "title": "Lunch", "track": null, "speakers": [], "detail": "In the main hall.", "tiers": ["customer", "lab", "team"] },
+          { "id": "s207", "start": "13:00", "end": "14:30", "title": "Lab: Turn last month's incidents into a report", "track": "lab", "speakers": [], "detail": "Led by Tarnell engineers. Bring a laptop.", "tiers": ["lab"] },
+          { "id": "s208", "start": "14:00", "end": "14:45", "title": "Tarnell product Q&A", "track": "booth", "speakers": [], "detail": "The Tarnell product team answers questions from the room.", "tiers": ["customer", "lab", "team"] },
+          { "id": "s209", "start": "15:30", "end": "16:10", "cue": "Q6", "title": "What the 6:10 boat taught us", "track": "main", "speakers": ["sp6"], "detail": "", "tiers": ["customer", "lab", "team"] },
+          { "id": "s210", "start": "17:00", "end": "18:00", "title": "Closing", "track": null, "speakers": [], "detail": "Last call on the Main Stage, then drinks in the foyer.", "tiers": ["customer", "lab", "team"] }
         ]
       }
     ]
   },
 
   "tickets": {
-    "heading": "Tickets",
-    "intro": "[PLACEHOLDER] One line. Pick a column to choose a ticket. Hover or tap a row to see exactly what it covers.",
-    "recommended": "full",
+    "heading": "Three ways to register",
+    "intro": "Registration is free. Pick a column to choose a type. Hover or tap a row to see what it covers.",
+    "recommended": "customer",
     "tiers": [
-      { "id": "day1", "name": "Day 1", "price": "$45", "note": "Sat only", "days": 1 },
-      { "id": "day2", "name": "Day 2", "price": "$45", "note": "Sun only", "days": 1 },
-      { "id": "full", "name": "Full pass", "price": "$80", "note": "Both days", "days": 2 },
-      { "id": "vip", "name": "VIP", "price": "$150", "note": "Both days, plus", "days": 2 }
+      { "id": "customer", "name": "Customer", "note": "Both days, one person" },
+      { "id": "lab", "name": "Customer + Lab seat", "note": "Plus 4 hands-on labs" },
+      { "id": "team", "name": "Bring your team", "note": "2 to 5 from one company" }
     ],
+    "computedRow": "Sessions in your agenda",
     "rows": [
-      { "id": "r-d1", "group": "Access", "label": "Day 1 sessions", "from": "day:d1", "tiers": { "day1": "yes", "day2": "no", "full": "yes", "vip": "yes" } },
-      { "id": "r-d2", "group": "Access", "label": "Day 2 sessions", "from": "day:d2", "tiers": { "day1": "no", "day2": "yes", "full": "yes", "vip": "yes" } },
-      { "id": "r-ws", "group": "Access", "label": "Workshops and studio", "from": "track:studio", "tiers": { "day1": "no", "day2": "no", "full": "yes", "vip": "yes" } },
-      { "id": "r-lunch", "group": "Extras", "label": "Lunch", "detail": "[PLACEHOLDER] Lunch both days in the main hall.", "tiers": { "day1": "no", "day2": "no", "full": "yes", "vip": "yes" } },
-      { "id": "r-dinner", "group": "Extras", "label": "Speaker dinner", "from": "session:s107", "tiers": { "day1": "no", "day2": "no", "full": "no", "vip": "yes" } },
-      { "id": "r-seat", "group": "Extras", "label": "Reserved seating", "detail": "[PLACEHOLDER] First three rows at every Main Stage session.", "tiers": { "day1": "no", "day2": "no", "full": "no", "vip": "Front rows" } }
+      { "id": "r-key", "group": "Program", "label": "Keynotes", "from": "track:main", "tiers": { "customer": "yes", "lab": "yes", "team": "yes" } },
+      { "id": "r-break", "group": "Program", "label": "Breakouts", "from": "track:booth", "tiers": { "customer": "yes", "lab": "yes", "team": "yes" } },
+      { "id": "r-night", "group": "Program", "label": "Opening night", "from": "session:s111", "tiers": { "customer": "yes", "lab": "yes", "team": "yes" } },
+      { "id": "r-labs", "group": "Program", "label": "Hands-on labs", "from": "track:lab", "tiers": { "customer": "no", "lab": "4 reserved", "team": "no" } },
+      { "id": "r-row", "group": "Seats", "label": "Reserved keynote row", "detail": "One row held for your team at every Main Stage keynote, so you sit together.", "tiers": { "customer": "no", "lab": "no", "team": "yes" } },
+      { "id": "r-rec", "group": "Seats", "label": "Recordings after the event", "detail": "All six keynotes and every breakout, sent to your work email the week after.", "tiers": { "customer": "yes", "lab": "yes", "team": "yes" } },
+      { "id": "r-seats", "group": "Seats", "label": "Seats", "detail": "Lab seats are limited to 120, first come. Team registrations cover 2 to 5 people from one company.", "tiers": { "customer": "1", "lab": "1 + lab seat", "team": "2 to 5" } }
     ],
-    "footnote": "[PLACEHOLDER] Prices include fees. Refunds until 7 days before."
+    "footnote": "Free for Tarnell customers. Travel and hotel are on you."
   },
 
   "sponsors": {
     "heading": "Sponsors",
-    "tiers": [
-      { "name": "Presented by", "items": [{ "name": "Sponsor One", "logo": "", "link": "" }] },
-      { "name": "Partners", "items": [{ "name": "Sponsor Two", "logo": "", "link": "" }, { "name": "Sponsor Three", "logo": "", "link": "" }, { "name": "Sponsor Four", "logo": "", "link": "" }] }
-    ]
+    "tiers": []
   },
 
   "venue": {
     "heading": "Getting there",
-    "intro": "[PLACEHOLDER] One line on the venue and the best way to arrive.",
+    "intro": "Nave Carolina is in Iñaquito, Quito, a short walk from La Carolina Metro station.",
+    "feature": {
+      "title": "Tarnell shuttle",
+      "tag": "Recommended",
+      "body": "Free shuttle from UIO arrivals to Nave Carolina. Mon Apr 10, 10:00 AM to 10:00 PM, every 30 minutes."
+    },
     "mapLink": "",
     "items": [
-      { "title": "Address", "body": "[PLACEHOLDER] 123 Sample St, City, ST 00000." },
-      { "title": "Transit", "body": "[PLACEHOLDER] Nearest station and walk time." },
-      { "title": "Parking", "body": "[PLACEHOLDER] Where, and what it costs." },
-      { "title": "Check-in", "body": "[PLACEHOLDER] Where to go first and what to bring." },
-      { "title": "Accessibility", "body": "[PLACEHOLDER] Step-free access, seating, and who to contact." }
+      { "title": "Metro", "body": "Quito Metro Line 1 runs underground from Quitumbe in the south to El Labrador in the north, 15 stations. Get off at La Carolina station, at Avenida Eloy Alfaro and Avenida de La República, at the south end of Parque La Carolina next to the financial district. Nave Carolina is a short walk from the station." },
+      { "title": "Paying for the Metro", "body": "Tarjeta Ciudad card, or cash at the turnstile." },
+      { "title": "From the airport", "body": "Mariscal Sucre International (UIO) is in Tababela. The Metro doesn't reach the airport. Public buses run from the airport to the Río Coca and Carcelén terminals in the north and Quitumbe in the south, and taxis wait outside arrivals." },
+      { "title": "Altitude", "body": "Quito sits at about 2,850 m (9,350 ft). Plan an easy first day and drink water." }
     ]
   },
 
   "registration": {
     "heading": "Register",
-    "intro": "[PLACEHOLDER] One line.",
+    "intro": "Free for Tarnell customers. Takes a minute.",
     "demoNotice": "Demo form. Nothing is sent anywhere.",
-    "extraFields": [
-      { "id": "org", "label": "Company or school", "type": "text", "required": false },
-      { "id": "access", "label": "Access needs", "type": "textarea", "required": false, "hint": "Anything we should plan for." }
-    ],
-    "confirmation": "[PLACEHOLDER] What happens next: confirmation email, where to check in."
+    "submitLabel": "Register",
+    "card": {
+      "label": "WALK-UP",
+      "demoLine": "Demo only. Nothing was sent.",
+      "saveLabel": "Save card",
+      "againLabel": "Register someone else"
+    },
+    "shotDefaults": { "company": "Northline Transit", "tier": "customer" },
+    "teamSize": { "label": "Team size", "min": 2, "max": 5 }
   },
 
   "faq": {
     "heading": "FAQ",
     "items": [
-      { "q": "[PLACEHOLDER] Can I transfer my ticket?", "a": "[PLACEHOLDER] Answer." },
-      { "q": "[PLACEHOLDER] Is there a dress code?", "a": "[PLACEHOLDER] Answer." },
-      { "q": "[PLACEHOLDER] Will sessions be recorded?", "a": "[PLACEHOLDER] Answer." },
-      { "q": "[PLACEHOLDER] What is the refund policy?", "a": "[PLACEHOLDER] Answer." }
+      { "q": "Where do I pick up my badge?", "a": "At the front desk in the Nave Carolina foyer from 8:00 AM both days. Bring a photo ID." },
+      { "q": "Will the keynotes be recorded?", "a": "Yes. All six keynotes and every breakout are recorded and sent to your work email the week after. Labs are not recorded." },
+      { "q": "Can you handle my dietary needs?", "a": "Yes. Add them when you register and the kitchen will plan for them. Vegetarian and vegan options are at every meal." },
+      { "q": "Can a colleague go in my place?", "a": "Yes. Reply to your confirmation email with their name and work email before Apr 4 and we will move the registration." },
+      { "q": "Is the hall step-free?", "a": "Yes. Nave Carolina is on one level with a step-free entrance, and the Main Stage has wheelchair spaces in the front row." },
+      { "q": "How do I deal with the altitude?", "a": "Quito sits at about 2,850 m. Plan an easy first day, drink water, and go light on alcohol at opening night." },
+      { "q": "Is there wifi?", "a": "Yes, across the whole hall. The network name and password are printed on your badge." },
+      { "q": "How do I cancel?", "a": "Reply to your confirmation email any time before the event. If you had a lab seat, it goes to the next person in line." }
     ]
   }
 }

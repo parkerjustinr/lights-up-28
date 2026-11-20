@@ -2,42 +2,70 @@
 
 One-page event site. Plain HTML, CSS, vanilla JS. No framework, no build step. Deploys to GitHub Pages from `main`, root.
 
+## The event
+Lights Up '28, the customer conference of Tarnell (fictional ops software company). Free for Tarnell customers. Idea: customers run the show. Every main-stage keynote is a customer, and the visitor calls the cues on the keynote wall.
+- Tue Apr 11 to Wed Apr 12, 2028. Time zone America/Guayaquil, labelled "ECT". Doors 8:00 AM both days.
+- Nave Carolina (fictional), Iñaquito, Quito, Ecuador. No street address.
+- Date and place line, used everywhere: "Apr 11-12, 2028 · Nave Carolina, Quito" (`meta.dateLine`).
+- Everything is fictional except the Getting there facts (Metro, payment, airport, altitude), which are verified. Add no other transit facts, times or fares.
+- No prices or "$" anywhere. No countdown, "today" logic or past-event state. Keep Spanish place names exactly, accents included.
+
 ## Where things live
 - `data/event.json` - all content. Change copy here, not in the markup.
-  - `sections` sets order and on/off for every section. Nav and footer follow it.
-  - `tracks` drive schedule colors (track-1, track-2, track-3 in CSS, in the order listed).
-  - Schedule sessions carry `tiers`, which the ticket matrix and calendar downloads use.
-  - Ticket rows with `from` (`day:<id>`, `track:<id>`, `session:<id>`) build their preview from the schedule. Rows without `from` show `detail`.
-  - `[PLACEHOLDER]` in any string shows a visible Placeholder tag.
-- `styles.css` - design tokens at the top of `:root`. Change tokens first, then section styles.
+  - `meta` - name, host (`Tarnell`, the header and footer wordmark), timezone, `tzLabel` ("ECT"), `dateLine`, page title, description, `icsStamp` (fixed DTSTAMP for .ics files).
+  - `sections` sets order and on/off for every section. Nav and footer follow it. Sponsors is off.
+  - `header.cta` - the Register button in the bar.
+  - `wall` - keynote wall strings: label ("LIGHTS UP"), caption, GO text, live/standby words, link and save labels.
+  - `hero` - the band under the wall: event name, one line, Register button.
+  - `tracks` are the rooms and drive schedule colors (track-1 Main Stage, track-2 The Booth, track-3 Lab, in the order listed). Sessions with `"track": null` are whole-venue items (doors, lunch, evening) and get the neutral style.
+  - Schedule sessions carry `tiers` (registration type ids), which the matrix computed row and calendar downloads use. A session with `"cue": "Q1"` .. `"Q6"` is a main-stage keynote: it goes on the wall in cue order and renders as a full color block in the agenda. Only those six carry a cue.
+  - `speakers.items` - name, role, company, photo (bare images.unsplash.com URL; `img()` in app.js adds size params). The first speaker is the featured card. Cards show one "See in agenda" link to the speaker's first session.
+  - `tickets` - the three registration types (`customer`, `lab`, `team`) and matrix rows. Rows with `from` (`day:<id>`, `track:<id>`, `session:<id>`) build their preview from the schedule. Rows without `from` show `detail`. `computedRow` counts agenda items per type from session tiers. `footnote` sits under the matrix.
+  - `venue.feature` - the recommended option (Tarnell shuttle) as one big block; `items` - the verified facts.
+  - `registration` - form labels, team size range, walk-up `card` strings, `shotDefaults` for `?shot=1&n=`.
+  - `[PLACEHOLDER]` in any string shows a visible Placeholder tag. There are none now; keep it that way.
+- `styles.css` - design tokens at the top of `:root`. Change tokens first, then section styles. `--host` / `--on-host` color the wall and the walk-up card (temporary values until the design pass). `--track-1` points at `--host`.
 - `app.js` - one renderer per section in the `R` object. To add a section: add a renderer `R.<id>`, then add `{ "id": "<id>", "label": "...", "on": true }` to `sections`.
-- `#hero-moment` in `index.html` is reserved for the one big hero element.
+- `#hero-moment` in `index.html` holds the keynote wall. `#hero` holds the band under it.
 
 ## Built-in features (keep them working)
-- Featured speaker plus grid. Speakers link to their sessions and sessions link back, switching the day tab if needed.
-- Schedule day tabs (arrow keys work), track colors, "show my time" toggle (Intl API), per-day .ics download.
-- Ticket breakdown matrix: pick a column to choose a ticket, hover or focus a row for a side preview on desktop, tap a row to open it inline on phones. No sideways scroll on phones. Cost-per-day row is computed.
-- Demo registration with validation and a confirmation state. Nothing is sent anywhere.
+- Keynote wall: loads on Q1 with photo, name and title, never empty, never auto-advances. GO cuts to the next cue (Q6 wraps to Q1), cue buttons cut straight to a cue. Hard cuts only: no fade, no slide. All six photos sit in the DOM, eager, so a cut never shows a blank. `aria-live` announces "Q3. June Okafor. Load-in, load-out, 212 times a year." GO's label names the next cue. The live cue is filled, the next one is marked standby. Duotone = grayscale photo multiplied onto `--host`.
+- Shared stage component (`stageCopy`, `.stage`): the wall and the walk-up card use the same markup and name style.
+- "See in agenda" (wall and speaker cards, via `goToSession`): switches the day tab, scrolls the session under the sticky header, lights only that session (clears any other) and moves focus to it.
+- Featured speaker plus grid of all 10 speakers. Speaker names in the agenda (with 32px photos) link back to cards.
+- Schedule day tabs (arrow keys work), room colors, keynote blocks, "show my time" toggle (Intl API), per-day .ics download. Times always carry a zone label (ECT in event time).
+- Registration type matrix: pick a column to choose a type, hover or focus a row for a side preview on desktop (not sticky), tap a row to open it inline on phones. No sideways scroll on phones. Computed "Sessions in your agenda" row. Synced both ways with the form's type select.
+- Demo registration: first, last, work email, company, type, team size (only for Bring your team). Errors next to fields, the first one scrolled into view. A valid submit cuts in the WALK-UP title card, with "Demo only. Nothing was sent." Nothing is sent anywhere.
+- Save card: exports the walk-up card or the current wall cue as a 1200x630 PNG via canvas (duotone done per pixel; needs the Unsplash CORS header).
 - Skip link, visible focus, motion tiers (see Motion).
+
+## URL switches
+- `?shot=1` - set up for a still without changing layout: wall on Q1 (`&q=3` puts Q3 live, Q4 on standby), every transition and animation off, every image eager, header static, no hover or focus styling, no "show my time" toggle (event zone only), page hidden until fonts load, then `<html data-shot-ready="1">` once fonts and images are done.
+- `?shot=1&n=Full%20Name` - registration renders already confirmed: walk-up card for that name, type Customer, company Northline Transit.
+- `?n=Full%20Name` (no shot) - prefills first and last name (split on the last space). Does not submit.
+- `?motion=full` - full version of every effect, whatever the reduced-motion setting. `index.html` sets `data-motion="full"` and `data-shot="1"` on `<html>` before first paint; `app.js` reads `MOTION_FULL` and `SHOT`.
 
 ## Motion
 Every motion effect has exactly one tier. Add new effects to the list below with their tier.
 - Tier 1: plays for everyone, including under `prefers-reduced-motion`. Plays once, finishes in under 5 seconds, never flashes (no more than one fade in and out, nothing blinking). Needs no reduced-motion rule.
-- Tier 2: full version by default. A softer version (instant, a fade instead of a move, or shorter) under `prefers-reduced-motion: reduce`. Write the soft rule inside the reduced-motion block in `styles.css`, scoped to `:root:not([data-motion="full"])`. In JS, check `matchMedia("(prefers-reduced-motion: reduce)")` and `MOTION_FULL`.
+- Tier 2: full version by default. A softer version (instant, a fade instead of a move, or shorter) under `prefers-reduced-motion: reduce`. Write the soft rule inside the reduced-motion block in `styles.css`, scoped to `:root:not([data-motion="full"])`. In JS, check `matchMedia("(prefers-reduced-motion: reduce)")` and `MOTION_FULL` (helper: `smoothOK()`).
 - Tier 3: sustained or looping. Runs for everyone, with a visible on/off toggle (a button with `aria-pressed`) next to the effect. Save the choice in localStorage under `motion:<effect-id>`, every read and write in try/catch, and default to on when storage fails.
-- `?motion=full` in the URL forces the full version of every effect: tier 2 ignores reduced motion, tier 3 starts on whatever the saved toggle says (without overwriting it). `app.js` sets `MOTION_FULL` and `data-motion="full"` on `<html>`.
+- `?motion=full` in the URL forces the full version of every effect: tier 2 ignores reduced motion, tier 3 starts on whatever the saved toggle says (without overwriting it).
+- Nothing flashes more than 3 times a second. `?shot=1` turns every effect off.
 
 Current effects:
-- Smooth scrolling for nav links, speaker-to-session links and hash links on load - tier 2 (instant jump under reduced motion).
-- Session arrival highlight: background fades in over 400ms, holds 1.6s, fades out - tier 1.
+- Smooth scrolling for nav links, "See in agenda" links, speaker links, the jump to the walk-up card and to the first form error, and hash links on load - tier 2 (instant jump under reduced motion).
+- Session lit state: background fades in over 400ms and stays until another session is lit - tier 1.
 - Button hover: color fade and arrow nudge, 120ms - tier 1.
-- Tier 3: none yet.
+- Tier 3: none. This site should have none.
 
-Instant state changes (button press offset, plus/cross icon rotation in the ticket matrix and FAQ) are not motion and need no tier.
+Instant state changes (wall cuts, cue button states, the walk-up card cutting in, button press offset, plus/cross icon rotation in the matrix and FAQ) are not motion and need no tier.
 
 ## Rules
 - No em dashes anywhere, in code comments or copy. Use a hyphen.
 - Left-align text. No eyebrow labels over headings. No decorative numbering. No gradients. No drop shadows at rest.
-- Every color means one thing (a track, a state, the selected ticket). Keep at least one big field of color per screen.
-- Check 360, 390, 768 and 1280 px wide: no sideways scroll, no clipped headings.
+- Every color means one thing (a room, a state, the selected registration type, the host wall). Keep at least one big field of color or one large object per section.
+- Header bar 64px desktop, 56px phone. Wall about 1440x500 at 1440x800 and 393x380 at 393x852. Date, place and Register stay in the first screen at both.
+- No run of more than 8 agenda rows that look the same. No sticky column.
+- Check 360, 393, 768, 1280 and 1440 px wide: no sideways scroll, no clipped headings.
 - Commit and push after every finished change.
