@@ -743,7 +743,15 @@
       "es-MX",
       "es-ES"
     ],
-    "done": "I'm done"
+    "done": "I'm done",
+    "noVoice": "Your phone has no Spanish voice installed. Use the respelling above.",
+    "fallback": "Speech recognition isn't available here, so this phrase switched to Record and compare. Tap it to record.",
+    "fallbackWhy": {
+      "not-allowed": "Speech recognition was blocked, so this phrase switched to Record and compare. Tap it to record.",
+      "service-not-allowed": "Speech recognition isn't allowed in this browser, so this phrase switched to Record and compare. Tap it to record.",
+      "audio-capture": "The microphone couldn't be shared with speech recognition, so this phrase switched to Record and compare. Tap it to record.",
+      "network": "Speech recognition needs a network connection, so this phrase switched to Record and compare. Tap it to record."
+    }
   },
   "registration": {
     "heading": "Register",

@@ -772,7 +772,9 @@
       "</div>" +
       '<p class="ph-privacy">' + esc(ph.privacy) + "</p>");
   };
-  var PH = { i: 0, voice: null, busy: false, rec: null, stream: null, timer: null };
+  var PH = { i: 0, voice: null, busy: false, rec: null, stream: null, timer: null, recordOnly: {}, audio: null };
+  // A 0.05s silent WAV, played inside a tap to unlock audio playback on iOS.
+  var SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA";
   function phNorm(t) {
     return String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
   }
@@ -796,18 +798,57 @@
     for (var m = 0; m < vs.length; m++) if (lang(vs[m]).indexOf("es") === 0) return vs[m];
     return null;
   }
+  // Voices load late on phones, so Listen is shown whenever the browser can speak at all.
   function phUpdateVoice() {
     PH.voice = phPickVoice();
-    if ($("ph-listen")) $("ph-listen").hidden = !PH.voice;
+    if ($("ph-listen")) $("ph-listen").hidden = !("speechSynthesis" in window);
+  }
+  // Speak with the best Spanish voice, or lang es-ES with no voice set. onStart/onFail report whether it played.
+  function phUtter(text, opts) {
+    opts = opts || {};
+    var u = new SpeechSynthesisUtterance(text);
+    if (PH.voice) { try { u.voice = PH.voice; } catch (e) { /* lang below still picks Spanish */ } u.lang = PH.voice.lang; }
+    else u.lang = "es-ES";
+    u.rate = 0.85;
+    var started = false, finished = false;
+    function end() { if (finished) return; finished = true; if (opts.done) opts.done(started); }
+    u.onstart = function () { started = true; };
+    u.onend = end;
+    u.onerror = end;
+    window.speechSynthesis.speak(u);
+    // Nothing started within 1.5s: treat it as no voice.
+    setTimeout(function () { if (!started) { try { window.speechSynthesis.cancel(); } catch (e) { /* none */ } end(); } }, 1500);
   }
   function phSpeak(text, done) {
-    if (!PH.voice) { if (done) done(); return; }
-    var u = new SpeechSynthesisUtterance(text);
-    try { u.voice = PH.voice; } catch (e) { /* lang below still picks Spanish */ }
-    u.lang = PH.voice.lang; u.rate = 0.85;
-    u.onend = u.onerror = function () { if (done) done(); };
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
+    if (!("speechSynthesis" in window)) { if (done) done(); return; }
+    PH.voice = phPickVoice();
+    phUtter(text, { done: function () { if (done) done(); } });
+  }
+  // Listen, inside the tap: cancel, find voices (waiting up to 1s for them to load), then speak.
+  function phListen() {
+    var ph = D.phrases, text = ph.items[PH.i].es, syn = window.speechSynthesis;
+    if (!syn) return;
+    syn.cancel();
+    function go() {
+      PH.voice = phPickVoice();
+      phUtter(text, { done: function (started) { if (!started) $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noVoice) + "</p>"; } });
+    }
+    if ((syn.getVoices() || []).length) { go(); return; }
+    var fired = false;
+    function onVoices() { if (fired) return; fired = true; if (syn.removeEventListener) syn.removeEventListener("voiceschanged", onVoices); go(); }
+    if (syn.addEventListener) syn.addEventListener("voiceschanged", onVoices);
+    setTimeout(onVoices, 1000);
+  }
+  // Inside a tap: unlock audio playback and speech for later, async use (iOS needs both started by a gesture).
+  function phUnlockAudio() {
+    try {
+      PH.audio = document.createElement("audio");
+      PH.audio.setAttribute("playsinline", "");
+      PH.audio.src = SILENT_WAV;
+      var pr = PH.audio.play();
+      if (pr && pr.catch) pr.catch(function () { /* the clip still tries later */ });
+    } catch (e) { PH.audio = null; }
+    try { if (window.speechSynthesis) { var u = new SpeechSynthesisUtterance(" "); u.volume = 0; window.speechSynthesis.speak(u); } } catch (e) { /* no speech */ }
   }
   // Compare word by word and show each phrase word as matched (solid ink) or missed (underlined).
   function phJudge(transcripts) {
@@ -831,9 +872,24 @@
   }
   // Listening: keep every final and interim result until "I'm done" or 10 seconds, then grade once.
   // A 5-bar meter follows the input level only. Every mic track stops when a try ends.
+  function phUseSR() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition) && !PH.recordOnly[PH.i]; }
   function phTryLabel() {
-    var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    return SR ? ph.try : ph.record;
+    var ph = D.phrases;
+    return phUseSR() ? ph.try : ph.record;
+  }
+  // Recognition failed or threw: this phrase switches to Record and compare, with one line saying why.
+  function phFallback(code) {
+    var ph = D.phrases;
+    PH.recordOnly[PH.i] = true;
+    phStopMic();
+    $("ph-result").innerHTML = '<p class="ph-msg">' + esc((ph.fallbackWhy && ph.fallbackWhy[code]) || ph.fallback) + "</p>";
+  }
+  // The first recording format this browser supports: audio/mp4 first (iOS Safari), then webm.
+  function phMime() {
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return "";
+    var list = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
+    for (var k = 0; k < list.length; k++) if (MediaRecorder.isTypeSupported(list[k])) return list[k];
+    return "";
   }
   function phMeterStart(stream) {
     var AC = window.AudioContext || window.webkitAudioContext, bars = document.querySelectorAll("#ph-meter i");
@@ -869,17 +925,36 @@
     if ($("ph-try")) $("ph-try").textContent = phTryLabel();
   }
   function phStartTry() {
-    var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition, useSR = phUseSR();
     PH.busy = true;
-    // Create the audio context inside the click, so the meter isn't blocked by autoplay rules.
+    // Inside the tap: the audio context for the meter, and audio/speech unlocked for later playback.
     var AC = window.AudioContext || window.webkitAudioContext;
     if (AC && !PH.ac) { try { PH.ac = new AC(); } catch (e) { PH.ac = null; } }
+    if (!useSR) phUnlockAudio();
     $("ph-try").textContent = ph.done;
     $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.listening) + "</p>";
-    var getMic = navigator.mediaDevices && navigator.mediaDevices.getUserMedia ? navigator.mediaDevices.getUserMedia({ audio: true }) : Promise.reject(new Error("no mic"));
-    if (SR) {
-      var rec = new SR();
-      PH.rec = rec; PH.list = [];
+    // Ask for the mic first, inside the tap, so the permission prompt appears.
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      if (useSR) { phStartSR(SR, null); return; }
+      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      if (!PH.busy) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+      if (useSR) phStartSR(SR, stream); else phStartRecord(stream);
+    }).catch(function (err) {
+      if (useSR && !(err && (err.name === "NotAllowedError" || err.name === "SecurityError"))) { phStartSR(SR, null); return; }
+      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic();
+    });
+  }
+  function phStartSR(SR, stream) {
+    // On phones the recognizer needs the mic to itself, so the meter's stream is released there.
+    var touch = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    if (stream && touch) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; $("ph-meter").hidden = false; }
+    if (stream) { PH.stream = stream; phMeterStart(stream); }
+    var rec;
+    try {
+      rec = new SR();
+      PH.rec = rec; PH.list = []; PH.micError = false;
       rec.lang = "es-EC"; rec.maxAlternatives = 3; rec.continuous = true; rec.interimResults = true;
       rec.onresult = function (e) {
         for (var k = 0; k < e.results.length; k++) {
@@ -889,38 +964,44 @@
         }
       };
       rec.onerror = function (e) {
-        if (e && (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture")) PH.micError = true;
+        var code = e && e.error;
+        if (code === "not-allowed" || code === "service-not-allowed" || code === "audio-capture" || code === "network") PH.fallbackCode = code;
       };
-      rec.onend = function () { phGrade(); };
-      PH.micError = false;
-      try { rec.start(); } catch (e) { phStopMic(); return; }
-      getMic.then(function (stream) { if (!PH.busy) { stream.getTracks().forEach(function (t) { t.stop(); }); return; } PH.stream = stream; phMeterStart(stream); })
-        .catch(function () { $("ph-meter").hidden = false; });
-      PH.timer = setTimeout(phDone, 10000);
-      return;
-    }
-    // No speech recognition (for example Firefox): record until "I'm done" or 10 seconds, then play it back, then the voice.
-    if (!window.MediaRecorder) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); return; }
-    getMic.then(function (stream) {
-      if (!PH.busy) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
-      PH.stream = stream;
-      phMeterStart(stream);
-      var chunks = [], mr = new MediaRecorder(stream);
-      PH.mr = mr;
-      mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
-      mr.onstop = function () {
-        var type = mr.mimeType || "audio/webm";
-        phStopMic();
-        PH.busy = true; $("ph-try").disabled = true;
-        var url = URL.createObjectURL(new Blob(chunks, { type: type })), au = new Audio(url);
-        $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.playing) + "</p>";
-        var next = function () { URL.revokeObjectURL(url); phSpeak(ph.items[PH.i].es, function () { PH.busy = false; $("ph-try").disabled = false; }); };
-        au.onended = next; au.onerror = next;
-        au.play().catch(next);
+      rec.onend = function () {
+        if (PH.fallbackCode) { var c = PH.fallbackCode; PH.fallbackCode = null; phFallback(c); return; }
+        phGrade();
       };
-      mr.start();
-      PH.timer = setTimeout(phDone, 10000);
-    }).catch(function () { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); });
+      PH.fallbackCode = null;
+      rec.start();
+    } catch (e) { PH.fallbackCode = null; phFallback("throw"); return; }
+    PH.timer = setTimeout(phDone, 10000);
+  }
+  // Record and compare: record until "I'm done" or 10 seconds, then play your clip, then the voice.
+  function phStartRecord(stream) {
+    var ph = D.phrases;
+    if (!window.MediaRecorder) { stream.getTracks().forEach(function (t) { t.stop(); }); $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); return; }
+    PH.stream = stream;
+    phMeterStart(stream);
+    var chunks = [], mime = phMime(), mr;
+    try { mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); }
+    catch (e) { mr = new MediaRecorder(stream); }
+    PH.mr = mr;
+    mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop = function () {
+      var type = mr.mimeType || mime || "audio/webm";
+      phStopMic();
+      PH.busy = true; $("ph-try").disabled = true;
+      var url = URL.createObjectURL(new Blob(chunks, { type: type }));
+      var au = PH.audio || document.createElement("audio");
+      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.playing) + "</p>";
+      var next = function () { au.onended = au.onerror = null; URL.revokeObjectURL(url); phSpeak(ph.items[PH.i].es, function () { PH.busy = false; $("ph-try").disabled = false; }); };
+      au.onended = next; au.onerror = next;
+      au.src = url;
+      var pr = au.play();
+      if (pr && pr.catch) pr.catch(next);
+    };
+    mr.start();
+    PH.timer = setTimeout(phDone, 10000);
   }
   // "I'm done" or the 10 second limit.
   function phDone() {
@@ -937,15 +1018,18 @@
     var cands = [0, 1, 2].map(function (a) { return list.map(function (alts) { return alts[a] || alts[0]; }).join(" ").replace(/\s+/g, " ").trim(); });
     phJudge(cands.filter(function (c, k) { return c && cands.indexOf(c) === k; }));
   }
-  function phTry() { if (PH.busy) phDone(); else phStartTry(); }
+  function phTry() {
+    if (PH.busy) { if (PH.mr && PH.audio) { try { var pr = PH.audio.play(); if (pr && pr.catch) pr.catch(function () {}); } catch (e) { /* later */ } } phDone(); }
+    else phStartTry();
+  }
   function wirePhrases() {
     if (!$("ph-card")) return;
     var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     $("ph-try").textContent = phTryLabel();
     phRender();
-    $("ph-prev").addEventListener("click", function () { phStopMic(); PH.i = (PH.i - 1 + ph.items.length) % ph.items.length; phRender(); });
-    $("ph-next").addEventListener("click", function () { phStopMic(); PH.i = (PH.i + 1) % ph.items.length; phRender(); });
-    $("ph-listen").addEventListener("click", function () { phSpeak(ph.items[PH.i].es); });
+    $("ph-prev").addEventListener("click", function () { phStopMic(); PH.i = (PH.i - 1 + ph.items.length) % ph.items.length; phRender(); $("ph-try").textContent = phTryLabel(); });
+    $("ph-next").addEventListener("click", function () { phStopMic(); PH.i = (PH.i + 1) % ph.items.length; phRender(); $("ph-try").textContent = phTryLabel(); });
+    $("ph-listen").addEventListener("click", phListen);
     $("ph-try").addEventListener("click", phTry);
     phUpdateVoice();
     if ("speechSynthesis" in window && window.speechSynthesis.addEventListener) window.speechSynthesis.addEventListener("voiceschanged", phUpdateVoice);
