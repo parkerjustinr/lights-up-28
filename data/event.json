@@ -69,6 +69,26 @@
       "href": "#register"
     }
   },
+  "tryBar": {
+    "lead": "Two things to try:",
+    "leadShort": "Try:",
+    "items": [
+      {
+        "n": "1",
+        "text": "Add your photo and walk on stage as Q7",
+        "short": "Walk on as Q7",
+        "href": "#register"
+      },
+      {
+        "n": "2",
+        "text": "Say Ecuadorian phrases out loud",
+        "short": "Say it in Quito",
+        "href": "#phrases"
+      }
+    ],
+    "close": "Hide these tips",
+    "label": "Two things to try"
+  },
   "wall": {
     "label": "LIGHTS UP",
     "caption": "Press GO to call the next keynote.",
@@ -93,18 +113,7 @@
     "cta": {
       "label": "Register",
       "href": "#register"
-    },
-    "cues": [
-      {
-        "text": "Your turn: register with a photo and walk on as Q7",
-        "href": "#register"
-      },
-      {
-        "text": "Say it in Quito: ten local phrases to try out loud",
-        "href": "#phrases"
-      }
-    ],
-    "stby": "STBY"
+    }
   },
   "about": {
     "heading": "Six keynotes. Six customers. You call the cues.",

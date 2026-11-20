@@ -239,10 +239,6 @@
       '<div class="band">' +
         '<div class="band-text"><h1 id="hero-title">' + esc(h.title) + "</h1>" +
         '<p class="band-when">' + esc(m.dateLine) + "</p>" +
-        // Two standby cues: a red lamp, STBY, a link. Desktop: under the date line. Phones: under Register.
-        (h.cues ? '<ul class="band-cues">' + h.cues.map(function (c) {
-          return '<li><span class="lamp" aria-hidden="true"></span><span class="stby" aria-hidden="true">' + esc(h.stby) + '</span><a href="' + esc(c.href) + '">' + esc(c.text) + ' <span aria-hidden="true">&rarr;</span></a></li>';
-        }).join("") + "</ul>" : "") +
         '<p class="band-sub">' + copy(h.sub) + "</p></div>" +
         '<a class="btn btn-primary band-cta" href="' + esc(h.cta.href) + '">' + esc(h.cta.label) + ' <span class="arrow" aria-hidden="true">&rarr;</span></a>' +
       "</div>";
@@ -1228,11 +1224,17 @@
       t.setAttribute("aria-controls", "reg-drawer"); t.setAttribute("aria-expanded", String(on));
     });
   }
+  // Height of what sticks to the top: the try banner (if shown) plus the nav bar. Not in ?shot=1.
+  function stickyTop() {
+    if (SHOT) return 0;
+    var header = document.querySelector(".site-header"), bar = $("try-bar");
+    return (header ? header.getBoundingClientRect().height : 0) + (bar && !bar.hidden ? bar.getBoundingClientRect().height : 0);
+  }
   // Scroll so the wall's floor line and the drawer are both in view.
   function scrollToDrawer(instant) {
     var floor = document.querySelector("#wall .stage-floor"), header = document.querySelector(".site-header");
     if (!floor) return;
-    var off = SHOT || !header ? 8 : header.getBoundingClientRect().height + 12;
+    var off = SHOT || !header ? 8 : stickyTop() + 12;
     var top = floor.getBoundingClientRect().top + window.pageYOffset - off;
     window.scrollTo({ top: Math.max(0, top), behavior: !instant && smoothOK() ? "smooth" : "instant" });
   }
@@ -1520,8 +1522,7 @@
       target.querySelector(".s-time").insertAdjacentHTML("beforeend", '<span class="s-live">' + esc(D.schedule.liveTag) + "</span>");
     }
     target.setAttribute("tabindex", "-1");
-    var header = document.querySelector(".site-header");
-    var off = SHOT || !header ? 16 : header.getBoundingClientRect().height + 16;
+    var off = SHOT ? 16 : stickyTop() + 16;
     var top = target.getBoundingClientRect().top + window.pageYOffset - off;
     var smooth = !(opts && opts.instant) && smoothOK();
     window.scrollTo({ top: top, behavior: smooth ? "smooth" : "instant" });
@@ -1560,6 +1561,39 @@
       // Links into a schedule session (wall, speaker cards) go through goToSession.
       var a = t.closest('a[href^="#session-"]');
       if (a && goToSession(a.getAttribute("href").slice(1))) e.preventDefault();
+    });
+  }
+
+  // ---------- "Two things to try" banner: sticks above the nav; hidden for the session by its X ----------
+  var TRY_KEY = "try-bar:closed";
+  function setTryHeight() {
+    var bar = $("try-bar"), h = bar && !bar.hidden ? Math.round(bar.getBoundingClientRect().height) : 0;
+    root.style.setProperty("--try-h", h + "px");
+  }
+  function renderTryBar() {
+    var t = D.tryBar, closed = false;
+    if (!t || SHOT) return;
+    try { closed = window.sessionStorage.getItem(TRY_KEY) === "1"; } catch (e) { closed = false; }
+    if (closed) return;
+    var items = t.items.map(function (x) {
+      return '<a class="try-link" href="' + esc(x.href) + '"' + (x.href === "#register" ? " data-reg-open" : "") + '><span class="try-n" aria-hidden="true">' + esc(x.n) + "</span>" +
+        '<span class="try-long">' + esc(x.text) + '</span><span class="try-short">' + esc(x.short) + '</span> <span aria-hidden="true">&rarr;</span></a>';
+    }).join("");
+    document.querySelector(".site-header").insertAdjacentHTML("beforebegin",
+      '<aside class="try-bar" id="try-bar" aria-label="' + esc(t.label) + '"><div class="try-in">' +
+        '<p class="try-lead"><span class="try-long">' + esc(t.lead) + '</span><span class="try-short">' + esc(t.leadShort) + "</span></p>" +
+        '<div class="try-items">' + items + "</div>" +
+        '<button type="button" class="try-x" id="try-x" aria-label="' + esc(t.close) + '"><span aria-hidden="true">&times;</span></button>' +
+      "</div></aside>");
+    setTryHeight();
+    window.addEventListener("resize", setTryHeight);
+    $("try-x").addEventListener("click", function () {
+      try { window.sessionStorage.setItem(TRY_KEY, "1"); } catch (e) { /* hidden for this page view only */ }
+      $("try-bar").hidden = true;
+      setTryHeight();
+      // Focus moves to the nav (the first nav link; on phones, where the nav is hidden, the wordmark).
+      var first = document.querySelector("#nav a");
+      (first && first.offsetParent ? first : $("brand")).focus();
     });
   }
 
@@ -1749,6 +1783,7 @@
       if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
       renderChrome();
+      renderTryBar();
       wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases();
       startEntrance();
       applyNameParam();
