@@ -142,6 +142,12 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
 .cue-strip.has-you .cue-state { gap: 2px; letter-spacing: -0.02em; }
 .cue-strip.has-you .lamp { width: 5px; height: 5px; }
 .cue-you { font-family: var(--mono); font-weight: 500; font-size: clamp(8px, 2.4vw, 10px); line-height: 1; }
+/* Lights up entrance: two ink halves over the wall's picture area, opened from a paper line in the middle. */
+.power { position: absolute; left: 0; right: 0; top: 0; z-index: 6; pointer-events: none; }
+.power i { position: absolute; left: 0; right: 0; height: 50.5%; background: var(--ink); }
+.power .pw-top { top: 0; transform-origin: 50% 0; }
+.power .pw-bot { bottom: 0; transform-origin: 50% 100%; }
+.power .pw-line { position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--paper); opacity: 0; z-index: 1; }
 /* Screen turning on: a 2px paper line across the middle, then the photo opens from it (photoReveal in app.js). */
 .scanline { position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--paper); z-index: 4; }
 /* The queue lane: reserved space at the foot of the wall, so figures never touch text. */

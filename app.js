@@ -306,9 +306,52 @@
       la.onfinish = function () { line.hidden = true; };
     }
   }
+  // ---------- Lights up: first-load entrance (tier 1, skipped by ?shot=1) ----------
+  // The wall starts as flat ink with the floor line and cue strip showing. At 250ms it powers on like
+  // a screen (a paper line across the middle opens to full height, about 450ms), then the five waiting
+  // figures walk in from the left (600ms). Text never animates. Any press skips to the end state.
+  var ENT = { on: false, timers: [], anims: [] };
+  function startEntrance() {
+    var wall = $("wall"), floor = wall && wall.querySelector(".stage-floor");
+    if (!wall || !floor || SHOT || !document.body.animate) return;
+    ENT.on = true;
+    wall.insertAdjacentHTML("beforeend", '<div class="power" id="power" aria-hidden="true"><i class="pw-top"></i><i class="pw-bot"></i><span class="pw-line"></span></div>');
+    $("power").style.height = floor.offsetTop + "px"; // the whole wall above the floor line
+    figs().forEach(function (f) { f.style.visibility = "hidden"; });
+    var ease = "cubic-bezier(0.33, 1, 0.68, 1)", pw = $("power");
+    ENT.timers.push(setTimeout(function () {
+      ENT.anims.push(pw.querySelector(".pw-line").animate([{ opacity: 1 }, { opacity: 1, offset: 0.16 }, { opacity: 0 }], { duration: 450, easing: "linear", fill: "forwards" }));
+      ["pw-top", "pw-bot"].forEach(function (c) {
+        ENT.anims.push(pw.querySelector("." + c).animate([{ transform: "scaleY(1)" }, { transform: "scaleY(0)" }], { duration: 380, delay: 70, easing: ease, fill: "forwards" }));
+      });
+    }, 250));
+    ENT.timers.push(setTimeout(function () {
+      if (pw.parentNode) pw.remove();
+      var g = qGeom();
+      figs().forEach(function (f) {
+        var k = +f.getAttribute("data-k");
+        if (k <= state.cue) return;
+        f.style.visibility = "visible";
+        move(f, g.enter, slotX(g, k - state.cue - 1), 3, 600);
+        ENT.anims.push(Qs.anims[Qs.anims.length - 1]);
+      });
+    }, 700));
+    ENT.timers.push(setTimeout(function () { ENT.on = false; }, 1320));
+  }
+  function endEntrance() {
+    if (!ENT.on) return;
+    ENT.on = false;
+    ENT.timers.forEach(clearTimeout); ENT.timers = [];
+    ENT.anims.forEach(function (a) { try { a.cancel(); } catch (e) { /* done */ } }); ENT.anims = [];
+    var pw = $("power");
+    if (pw) pw.remove();
+    placeQueue(state.cue);
+  }
+
   // GO: the front figure walks to the photo (600ms), the text cuts and the photo powers on (about 450ms),
   // the rest shuffle forward (300ms). From Q6, everyone runs back in from the left (1.5s max).
   function goNext() {
+    endEntrance();
     if (Qs.busy) return;
     fireGo();
     var n = CUES.length, i = state.cue, j = (i + 1) % n;
@@ -347,6 +390,7 @@
   }
   // A cue button cuts straight there: the queue rearranges with one 300ms shuffle.
   function jumpTo(j) {
+    endEntrance();
     stopQueue();
     var from = state.cue;
     cutTo(j, true);
@@ -431,6 +475,7 @@
   }
   function joinQueue(rec, opts) {
     opts = opts || {};
+    endEntrance();
     VIS.rec = rec; VIS.name = rec.name; VIS.title = regLine(rec);
     if (VIS.joined) { refreshVisitor(); }
     else {
@@ -537,8 +582,8 @@
     });
     placeQueue(state.cue);
     frameWallPhotos();
-    window.addEventListener("resize", function () { frameWallPhotos(); drawYouWall(); if (!Qs.busy) placeQueue(state.cue); });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!Qs.busy) placeQueue(state.cue); });
+    window.addEventListener("resize", function () { frameWallPhotos(); drawYouWall(); if (!Qs.busy && !ENT.on) placeQueue(state.cue); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!Qs.busy && !ENT.on) placeQueue(state.cue); });
   }
 
   // ---------- sections ----------
@@ -1504,6 +1549,7 @@
       renderHero();
       renderChrome();
       wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases();
+      startEntrance();
       applyNameParam();
       // ?shot=1&q=7&n=Name: the registrant is already on the wall as Q7, empty photo state.
       if (SHOT && shotQ === 7 && NAME_PARAM && VIS.joined) { cutTo(6, false); placeQueue(6); }
