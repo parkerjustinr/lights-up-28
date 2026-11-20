@@ -38,6 +38,24 @@
   function img(url, w, h, pad) {
     return url ? url + "?w=" + w + "&h=" + h + "&fit=facearea&facepad=" + (pad || 2.6) + "&crop=faces&auto=format&q=70" : "";
   }
+  // Wall photos: a little more zoomed out than the cards, so the CSS framing has headroom to work with.
+  var WALL_W = 760, WALL_H = 900, EYE = 0.465, EYE_AT = 0.38;
+  function wallPhoto(url) { return img(url, WALL_W, WALL_H, 4.6); }
+  // Box for a wall photo inside a W x H frame: eyes at 38% of the frame, frame fully covered.
+  function wallFrame(W, H) {
+    var ar = WALL_H / WALL_W;
+    var ih = Math.max(W * ar, (EYE_AT * H) / EYE, ((1 - EYE_AT) * H) / (1 - EYE));
+    var iw = ih / ar;
+    return { w: iw, h: ih, x: (W - iw) / 2, y: EYE_AT * H - EYE * ih };
+  }
+  function frameWallPhotos() {
+    var box = document.querySelector("#wall .stage-photo");
+    if (!box) return;
+    var f = wallFrame(box.clientWidth, box.clientHeight);
+    Array.prototype.forEach.call(box.querySelectorAll("img.wall-shot"), function (im) {
+      im.style.width = f.w + "px"; im.style.height = f.h + "px"; im.style.left = f.x + "px"; im.style.top = f.y + "px";
+    });
+  }
   function imgLoading(eager) { return SHOT || eager ? "eager" : "lazy"; }
 
   // ---------- time zones ----------
@@ -154,7 +172,7 @@
     var c = CUES[state.cue];
     var photos = CUES.map(function (x, i) {
       // All six photos are in the DOM and loaded eagerly, so a cut never shows a blank.
-      return '<img src="' + esc(img(x.sp.photo, 720, 860)) + '" alt="" width="720" height="860" loading="eager" decoding="sync" data-cue="' + i + '"' + (i === state.cue ? "" : " hidden") + ">";
+      return '<img src="' + esc(wallPhoto(x.sp.photo)) + '" alt="" class="wall-shot" width="760" height="900" loading="eager" decoding="sync" data-cue="' + i + '"' + (i === state.cue ? "" : " hidden") + ">";
     }).join("");
     var strip = CUES.map(function (x, i) {
       return '<li><button type="button" class="cue-btn" data-cue="' + i + '"><span class="cue-q">' + esc(x.cue) + '</span><span class="cue-state" aria-hidden="true"></span></button></li>';
@@ -166,7 +184,7 @@
           '<div class="stage-copy">' + stageCopy({ label: w.label, name: c.sp.name, title: c.s.title, cue: cueLine(c),
             nameId: "wall-name", titleId: "wall-title", cueId: "wall-cue",
             after: ' <a class="stage-link" id="wall-link" href="#session-' + esc(c.s.id) + '">' + esc(w.agendaLink) + "</a>" }) + "</div>" +
-          '<div class="stage-photo" aria-hidden="true">' + photos + '<div class="bands" hidden>' + "<span></span><span></span><span></span><span></span><span></span><span></span></div></div>" +
+          '<div class="stage-photo" aria-hidden="true">' + photos + '<span class="scanline" hidden></span></div>' +
           '<div class="queue" id="queue" aria-hidden="true">' + CUES.map(function (x, k) { return queueFigure(k); }).join("") + "</div>" +
         "</div>" +
         '<div class="stage-floor" aria-hidden="true"></div>' +
@@ -244,21 +262,36 @@
   function stopQueue() {
     Qs.timers.forEach(clearTimeout); Qs.timers = [];
     Qs.anims.forEach(function (a) { try { a.cancel(); } catch (e) { /* already done */ } }); Qs.anims = [];
-    var b = document.querySelector("#wall .bands");
-    if (b) b.hidden = true;
+    var sl = document.querySelector("#wall .scanline");
+    if (sl) sl.hidden = true;
     Qs.busy = false;
   }
-  // The photo powers on in 6 bands, top to bottom, over 300ms. Never more than ~3 a second.
-  function bandReveal() {
-    var b = document.querySelector("#wall .bands"), now = performance.now();
-    if (!b || SHOT || now - Qs.lastBand < 340) return;
+  // A screen turning on: a thin paper line across the middle, then the photo opens from it to full
+  // height (380ms, ease-out cubic) while settling from scale 1.06 and brightness 1.35. About 450ms.
+  // Restarted at most once every 340ms, so it can't flicker.
+  function photoReveal() {
+    var box = document.querySelector("#wall .stage-photo"), now = performance.now();
+    if (!box || SHOT || now - Qs.lastBand < 340) return;
+    var shot = box.querySelector("[data-cue]:not([hidden])"), line = box.querySelector(".scanline");
+    if (!shot || !shot.animate) return;
     Qs.lastBand = now;
-    var spans = b.querySelectorAll("span");
-    Array.prototype.forEach.call(spans, function (x) { x.style.visibility = "visible"; });
-    b.hidden = false;
-    Array.prototype.forEach.call(spans, function (x, k) { later(50 * (k + 1), function () { x.style.visibility = "hidden"; if (k === spans.length - 1) b.hidden = true; }); });
+    var base = getComputedStyle(shot).filter, bright = base && base !== "none" ? base + " brightness(1.35)" : "brightness(1.35)";
+    var ease = "cubic-bezier(0.33, 1, 0.68, 1)";
+    // Open from the frame's middle line, even when the photo box is taller than the frame.
+    var mid = box.clientHeight / 2 - shot.offsetTop, h = shot.offsetHeight || 1, top = Math.max(0, Math.min(100, (mid / h) * 100));
+    shot.style.transformOrigin = "50% " + mid + "px";
+    Qs.anims.push(shot.animate([
+      { clipPath: "inset(" + top + "% 0 " + (100 - top) + "% 0)", transform: "scale(1.06)", filter: bright },
+      { clipPath: "inset(0% 0 0% 0)", transform: "scale(1)", filter: base && base !== "none" ? base : "none" }
+    ], { duration: 380, delay: 70, easing: ease, fill: "backwards" }));
+    if (line) {
+      line.hidden = false;
+      var la = line.animate([{ opacity: 1, transform: "scaleY(1)" }, { opacity: 1, offset: 0.16 }, { opacity: 0, transform: "scaleY(1)" }], { duration: 450, easing: "linear" });
+      Qs.anims.push(la);
+      la.onfinish = function () { line.hidden = true; };
+    }
   }
-  // GO: the front figure walks to the photo (600ms), the photo powers on and the text cuts (300ms),
+  // GO: the front figure walks to the photo (600ms), the text cuts and the photo powers on (about 450ms),
   // the rest shuffle forward (300ms). From Q6, everyone runs back in from the left (1.5s max).
   function goNext() {
     if (Qs.busy) return;
@@ -273,7 +306,7 @@
       later(600, function () {
         walker.style.visibility = "hidden";
         cutTo(j, true);
-        bandReveal();
+        photoReveal();
       });
       later(900, function () {
         figs().forEach(function (f) {
@@ -292,7 +325,7 @@
       later(900, function () {
         figK(0).style.visibility = "hidden";
         cutTo(0, true);
-        bandReveal();
+        photoReveal();
       });
       later(1220, function () { Qs.busy = false; placeQueue(0); });
     }
@@ -303,7 +336,7 @@
     var from = state.cue;
     cutTo(j, true);
     if (SHOT || !$("queue")) { placeQueue(j); return; }
-    bandReveal();
+    photoReveal();
     var g = qGeom();
     figs().forEach(function (f) {
       var k = +f.getAttribute("data-k");
@@ -385,7 +418,8 @@
       b.addEventListener("click", function () { jumpTo(+b.getAttribute("data-cue")); });
     });
     placeQueue(state.cue);
-    window.addEventListener("resize", function () { if (!Qs.busy) placeQueue(state.cue); });
+    frameWallPhotos();
+    window.addEventListener("resize", function () { frameWallPhotos(); if (!Qs.busy) placeQueue(state.cue); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!Qs.busy) placeQueue(state.cue); });
   }
 
@@ -1116,7 +1150,7 @@
     var numeralColor = cssVar("--host-deep", "#F0B000");
     var display = cssVar("--display", "sans-serif"), body = cssVar("--body", "sans-serif"), mono = cssVar("--mono", "monospace");
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    Promise.all([fontsReady, o.canvas ? Promise.resolve(o.canvas) : loadImage(o.photo ? img(o.photo, 720, 860) : "")]).then(function (r) {
+    Promise.all([fontsReady, o.canvas ? Promise.resolve(o.canvas) : loadImage(o.photo ? wallPhoto(o.photo) : "")]).then(function (r) {
       var photo = r[1];
       var cv = document.createElement("canvas");
       cv.width = W; cv.height = H;
@@ -1135,10 +1169,15 @@
       if (photo) {
         // Duotone, ink to host: luminance picks a point between the two colors.
         var pw = 380, ph = floorY - P, px = W - P - pw, py = P;
-        var s = Math.max(pw / photo.width, ph / photo.height), sw = pw / s, sh = ph / s;
         var off = document.createElement("canvas"); off.width = pw; off.height = ph;
         var o2 = off.getContext("2d");
-        o2.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 2, sw, sh, 0, 0, pw, ph);
+        if (o.canvas) {
+          var s = Math.max(pw / photo.width, ph / photo.height), sw = pw / s, sh = ph / s;
+          o2.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 2, sw, sh, 0, 0, pw, ph);
+        } else {
+          var fr = wallFrame(pw, ph); // same framing as the wall
+          o2.drawImage(photo, fr.x, fr.y, fr.w, fr.h);
+        }
         try {
           if (!o.canvas) duotone(o2, pw, ph); // a walk-up photo is already duotoned
           ctx.drawImage(off, px, py);

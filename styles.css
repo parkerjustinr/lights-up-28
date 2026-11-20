@@ -125,11 +125,12 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
   font-family: var(--display); font-weight: 800; font-stretch: 100%; font-size: 230px; line-height: 0.8; color: var(--host-deep);
 }
 .stage-photo { grid-area: photo; width: clamp(104px, 30vw, 170px); aspect-ratio: 4 / 5; align-self: start; margin-top: 2px; position: relative; z-index: 2; background: var(--host); isolation: isolate; overflow: hidden; }
-.stage-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; filter: grayscale(1) contrast(1.1) brightness(1.06); mix-blend-mode: multiply; }
+/* Framing: frameWallPhotos() in app.js sizes and offsets each photo so the eyes sit about 38% down,
+   with headroom above the hair and the chin fully in, at any frame shape. These are the no-JS defaults. */
+.stage-photo img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 50%; filter: grayscale(1) contrast(1.1) brightness(1.06); mix-blend-mode: multiply; }
 .stage-photo::after { content: ""; position: absolute; inset: 0; background: var(--ink); mix-blend-mode: screen; pointer-events: none; }
-/* LED-wall power-on: 6 ink bands over the photo, removed top to bottom. */
-.bands { position: absolute; inset: 0; z-index: 3; display: grid; grid-template-rows: repeat(6, 1fr); }
-.bands span { background: var(--ink); }
+/* Screen turning on: a 2px paper line across the middle, then the photo opens from it (photoReveal in app.js). */
+.scanline { position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--paper); z-index: 4; }
 /* The queue lane: reserved space at the foot of the wall, so figures never touch text. */
 .queue { position: absolute; left: 0; right: 0; bottom: 0; height: var(--lane); z-index: 3; pointer-events: none; }
 .qf { position: absolute; left: 0; bottom: 0; height: calc(var(--h) * 0.52); width: auto; fill: var(--ink); overflow: visible; }
@@ -179,7 +180,7 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
   .stage-title { font-size: clamp(1.25rem, 2vw, 1.75rem); max-width: 30ch; margin: 0 0 12px; }
   .stage-cue { font-size: 1rem; padding-right: 0; }
   .stage-numeral { font-size: clamp(300px, 34vw, 480px); left: -0.02em; }
-  .stage-photo { position: absolute; right: 0; top: 28px; bottom: 0; width: min(30%, 400px); aspect-ratio: auto; margin: 0; }
+  .stage-photo { position: absolute; right: 0; top: 28px; bottom: 0; width: min(30%, 400px); aspect-ratio: auto; margin: 0; align-self: stretch; }
   .stage-figure { width: 20px; height: 56px; right: calc(min(30%, 400px) + 18px); }
   .wall-controls { flex-wrap: nowrap; gap: 16px; padding: 14px 0 16px; }
   .wall-controls::after { display: none; }
