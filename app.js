@@ -166,8 +166,8 @@
           '<div class="stage-copy">' + stageCopy({ label: w.label, name: c.sp.name, title: c.s.title, cue: cueLine(c),
             nameId: "wall-name", titleId: "wall-title", cueId: "wall-cue",
             after: ' <a class="stage-link" id="wall-link" href="#session-' + esc(c.s.id) + '">' + esc(w.agendaLink) + "</a>" }) + "</div>" +
-          '<div class="stage-photo" aria-hidden="true">' + photos + "</div>" +
-          FIGURE +
+          '<div class="stage-photo" aria-hidden="true">' + photos + '<div class="bands" hidden>' + "<span></span><span></span><span></span><span></span><span></span><span></span></div></div>" +
+          '<div class="queue" id="queue" aria-hidden="true">' + CUES.map(function (x, k) { return queueFigure(k); }).join("") + "</div>" +
         "</div>" +
         '<div class="stage-floor" aria-hidden="true"></div>' +
         '<div class="wall-controls">' +
@@ -185,6 +185,134 @@
         '<a class="btn btn-primary band-cta" href="' + esc(h.cta.href) + '">' + esc(h.cta.label) + ' <span class="arrow" aria-hidden="true">&rarr;</span></a>' +
       "</div>";
     cutTo(state.cue, false);
+  }
+
+  // ---------- the queue: one flat figure per keynote, waiting on the floor line ----------
+  // Same shapes as the standing figure, each a little different so they read as people.
+  // They face the photo (right). Accessory lines are cut out in the wall color.
+  var FIG_VARIANTS = [
+    { h: 58, extra: "" },
+    { h: 62, extra: '<path class="cut" d="M17 15L8 33"/><rect x="2" y="31" width="6" height="7" rx="1"/>' },                 // bag strap
+    { h: 53, extra: '<path class="cut" d="M8.5 14l3.5 9 3.5-9"/><rect class="cutfill" x="10" y="23" width="4" height="5"/>' }, // lanyard
+    { h: 57, extra: '<path d="M17 17l6 6-1.6 1.4L16 19z"/><rect x="20.5" y="19.5" width="5" height="6" rx="1"/>' },           // coffee
+    { h: 55, extra: '<circle cx="7" cy="4" r="2.6"/>' },                                                                           // hair bun
+    { h: 60, extra: '<rect x="2" y="15" width="5" height="13" rx="1.5"/>' }                                                     // backpack
+  ];
+  function queueFigure(k) {
+    var v = FIG_VARIANTS[k % FIG_VARIANTS.length];
+    return '<svg class="qf" data-k="' + k + '" viewBox="0 0 28 60" style="--h:' + v.h + 'px" focusable="false">' +
+      '<circle cx="12" cy="6" r="5"/><path d="M6 13h12l2 22h-3.2L15.4 60h-3L12 39l-.4 21h-3L7.2 35H4z"/>' + v.extra + "</svg>";
+  }
+  var Qs = { busy: false, timers: [], anims: [], lastBand: -1000 };
+  function figs() { return Array.prototype.slice.call(document.querySelectorAll("#queue .qf")); }
+  function figK(k) { return document.querySelector('#queue .qf[data-k="' + k + '"]'); }
+  function qGeom() {
+    var lane = $("queue"), photo = document.querySelector("#wall .stage-photo");
+    var wide = window.matchMedia("(min-width: 720px)").matches;
+    var lr = lane.getBoundingClientRect(), pr = photo.getBoundingClientRect();
+    var figW = wide ? 23 : 13, sp = wide ? 38 : 21;
+    // The walker stops at the photo: its left edge on desktop, the right end of the floor on phones.
+    var photoX = wide ? pr.left - lr.left - figW - 4 : lr.width - figW - 2;
+    var front = photoX - (wide ? 72 : 40);
+    return { photoX: photoX, front: front, sp: sp, enter: -figW - 12 };
+  }
+  function slotX(g, slot) { return g.front - slot * g.sp; }
+  function setX(f, x) { f._x = x; f.style.transform = "translateX(" + x + "px)"; }
+  // Two-step bob: the figure lifts on each step, never slides flat.
+  function walkKF(x0, x1, steps, lift) {
+    var kf = [], n = steps * 2;
+    for (var s2 = 0; s2 <= n; s2++) kf.push({ transform: "translate(" + (x0 + (x1 - x0) * s2 / n) + "px," + (s2 % 2 ? -lift : 0) + "px)" });
+    return kf;
+  }
+  function move(f, x0, x1, steps, dur, delay) {
+    setX(f, x0);
+    if (!f.animate) { setX(f, x1); return; }
+    var a = f.animate(walkKF(x0, x1, steps, steps > 1 ? 3 : 2), { duration: dur, delay: delay || 0, easing: "linear", fill: "both" });
+    Qs.anims.push(a);
+    a.onfinish = function () { setX(f, x1); a.cancel(); };
+  }
+  function later(ms, fn) { Qs.timers.push(setTimeout(fn, ms)); }
+  function placeQueue(i) {
+    if (!$("queue")) return;
+    var g = qGeom();
+    figs().forEach(function (f) {
+      var k = +f.getAttribute("data-k");
+      f.style.visibility = k > i ? "visible" : "hidden";
+      setX(f, k > i ? slotX(g, k - i - 1) : g.enter);
+    });
+  }
+  function stopQueue() {
+    Qs.timers.forEach(clearTimeout); Qs.timers = [];
+    Qs.anims.forEach(function (a) { try { a.cancel(); } catch (e) { /* already done */ } }); Qs.anims = [];
+    var b = document.querySelector("#wall .bands");
+    if (b) b.hidden = true;
+    Qs.busy = false;
+  }
+  // The photo powers on in 6 bands, top to bottom, over 300ms. Never more than ~3 a second.
+  function bandReveal() {
+    var b = document.querySelector("#wall .bands"), now = performance.now();
+    if (!b || SHOT || now - Qs.lastBand < 340) return;
+    Qs.lastBand = now;
+    var spans = b.querySelectorAll("span");
+    Array.prototype.forEach.call(spans, function (x) { x.style.visibility = "visible"; });
+    b.hidden = false;
+    Array.prototype.forEach.call(spans, function (x, k) { later(50 * (k + 1), function () { x.style.visibility = "hidden"; if (k === spans.length - 1) b.hidden = true; }); });
+  }
+  // GO: the front figure walks to the photo (600ms), the photo powers on and the text cuts (300ms),
+  // the rest shuffle forward (300ms). From Q6, everyone runs back in from the left (1.5s max).
+  function goNext() {
+    if (Qs.busy) return;
+    fireGo();
+    var n = CUES.length, i = state.cue, j = (i + 1) % n;
+    if (SHOT || !$("queue")) { cutTo(j, true); placeQueue(j); return; }
+    Qs.busy = true;
+    var g = qGeom();
+    if (j > 0) {
+      var walker = figK(j);
+      move(walker, slotX(g, 0), g.photoX, 2, 600);
+      later(600, function () {
+        walker.style.visibility = "hidden";
+        cutTo(j, true);
+        bandReveal();
+      });
+      later(900, function () {
+        figs().forEach(function (f) {
+          var k = +f.getAttribute("data-k");
+          if (k > j) move(f, slotX(g, k - j), slotX(g, k - j - 1), 1, 300);
+        });
+      });
+      later(1210, function () { Qs.busy = false; });
+    } else {
+      figs().forEach(function (f) {
+        var k = +f.getAttribute("data-k");
+        f.style.visibility = "visible";
+        if (k === 0) move(f, g.enter, g.photoX, 5, 900);
+        else move(f, g.enter, slotX(g, k - 1), 4, 760, 60 * k);
+      });
+      later(900, function () {
+        figK(0).style.visibility = "hidden";
+        cutTo(0, true);
+        bandReveal();
+      });
+      later(1220, function () { Qs.busy = false; placeQueue(0); });
+    }
+  }
+  // A cue button cuts straight there: the queue rearranges with one 300ms shuffle.
+  function jumpTo(j) {
+    stopQueue();
+    var from = state.cue;
+    cutTo(j, true);
+    if (SHOT || !$("queue")) { placeQueue(j); return; }
+    bandReveal();
+    var g = qGeom();
+    figs().forEach(function (f) {
+      var k = +f.getAttribute("data-k");
+      if (k <= j) { f.style.visibility = "hidden"; setX(f, g.enter); return; }
+      var x1 = slotX(g, k - j - 1);
+      var x0 = k > from && f.style.visibility !== "hidden" ? f._x : x1 - g.sp;
+      f.style.visibility = "visible";
+      if (x0 === x1) setX(f, x1); else move(f, x0, x1, 1, 300);
+    });
   }
 
   // Hard cut: everything swaps in the same frame. No fade, no slide.
@@ -252,10 +380,13 @@
   function wireWall() {
     var wall = $("wall");
     if (!wall) return;
-    $("go-btn").addEventListener("click", function () { fireGo(); cutTo(state.cue + 1, true); });
+    $("go-btn").addEventListener("click", goNext);
     Array.prototype.forEach.call(wall.querySelectorAll(".cue-btn"), function (b) {
-      b.addEventListener("click", function () { cutTo(+b.getAttribute("data-cue"), true); });
+      b.addEventListener("click", function () { jumpTo(+b.getAttribute("data-cue")); });
     });
+    placeQueue(state.cue);
+    window.addEventListener("resize", function () { if (!Qs.busy) placeQueue(state.cue); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!Qs.busy) placeQueue(state.cue); });
   }
 
   // ---------- sections ----------
