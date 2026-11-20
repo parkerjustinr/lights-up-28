@@ -423,6 +423,23 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
   .walkup .stage-name .nm { display: inline; }
 }
 .confirm-demo { margin: 14px 0 14px; font-weight: 700; }
+/* Walk-up photo slot: the card's own photo area, 4:5, in the wall's duotone. */
+.wu-body { display: grid !important; grid-template-areas: none !important; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; align-items: end; }
+.wu-slot { width: clamp(110px, 26vw, 260px); aspect-ratio: 4 / 5; position: relative; overflow: hidden; background: var(--host); border: 2px solid var(--ink); align-self: end; }
+.wu-canvas, .wu-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wu-video { transform: scaleX(-1); filter: grayscale(1) contrast(1.1); mix-blend-mode: multiply; }
+.wu-empty { position: absolute; inset: 0; }
+.wu-empty::before { content: ""; position: absolute; left: 14%; right: 14%; bottom: 30%; height: 2px; background: var(--ink); }
+.wu-empty .qf { position: absolute; left: 50%; bottom: calc(30% + 2px); height: 42%; width: auto; aspect-ratio: 28 / 60; transform: translateX(-50%); }
+.wu-empty-line { position: absolute; left: 10px; right: 10px; bottom: 10px; margin: 0; font-family: var(--mono); font-weight: 500; font-size: clamp(0.72rem, 1.4vw, 0.95rem); line-height: 1.25; text-align: left; }
+.wu-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.wu-status:empty { display: none; }
+.wu-status { margin: 10px 0 0; font-weight: 700; }
+.wu-privacy { margin: 10px 0 0; font-size: 0.95rem; }
+.sec-register .wu-actions .btn:not(.btn-primary) { color: var(--paper); border-color: var(--paper); }
+.sec-register .wu-actions .btn-primary { background: var(--host); border-color: var(--host); color: var(--ink); }
+html:not([data-shot]) .sec-register .wu-actions .btn:hover { background: var(--host); border-color: var(--host); color: var(--ink); }
+@media (max-width: 479px) { .wu-body { grid-template-columns: 1fr; row-gap: 14px; } .wu-slot { width: 150px; } }
 .confirm-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .sec-register .confirm-actions .btn { color: var(--paper); border-color: var(--paper); }
 html:not([data-shot]) .sec-register .confirm-actions .btn:hover { background: var(--host); border-color: var(--host); color: var(--ink); }

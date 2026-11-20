@@ -675,7 +675,21 @@
       "label": "WALK-UP",
       "demoLine": "Demo only. Nothing was sent.",
       "saveLabel": "Save card",
-      "againLabel": "Register someone else"
+      "againLabel": "Register someone else",
+      "photo": {
+        "empty": "You're on after Q6.",
+        "take": "Take a photo",
+        "upload": "Upload a photo",
+        "snap": "Snap",
+        "cancel": "Cancel",
+        "privacy": "Your photo stays in this browser tab, in memory only, and is never sent anywhere.",
+        "denied": "Camera access was blocked. You can still upload a photo.",
+        "none": "No camera found here. You can still upload a photo.",
+        "bad": "That file didn't open as an image. Try another one.",
+        "labelEmpty": "No photo yet",
+        "labelPhoto": "Your photo, in the wall's colors",
+        "labelLive": "Camera preview"
+      }
     },
     "shotDefaults": {
       "company": "Northline Transit",

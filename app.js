@@ -720,9 +720,19 @@
     var c = D.registration.card, days = daysForTier(rec.tier.id);
     $("reg-out").innerHTML =
       '<div class="confirm" role="status" tabindex="-1" id="reg-confirm">' +
-        '<div class="stage walkup"><div class="stage-body"><div class="stage-copy">' +
+        '<div class="stage walkup"><div class="stage-body wu-body"><div class="stage-copy">' +
           stageCopy({ label: c.label, name: rec.name, title: regLine(rec), cue: D.meta.dateLine }) +
-        "</div>" + FIGURE + '</div><div class="stage-floor" aria-hidden="true"></div></div>' +
+        "</div>" + '<div class="wu-slot" id="wu-slot" role="img" aria-label="' + esc(c.photo.labelEmpty) + '">' + wuEmpty() + "</div>" +
+        '</div><div class="stage-floor" aria-hidden="true"></div></div>' +
+        '<div class="wu-actions">' +
+          '<button type="button" class="btn btn-small" id="wu-take">' + esc(c.photo.take) + "</button>" +
+          '<button type="button" class="btn btn-small" id="wu-upload">' + esc(c.photo.upload) + "</button>" +
+          '<input type="file" id="wu-file" accept="image/*" hidden>' +
+          '<button type="button" class="btn btn-primary btn-small" id="wu-snap" hidden>' + esc(c.photo.snap) + "</button>" +
+          '<button type="button" class="btn btn-small" id="wu-cancel" hidden>' + esc(c.photo.cancel) + "</button>" +
+        "</div>" +
+        '<p class="wu-status" id="wu-status" role="status"></p>' +
+        '<p class="wu-privacy">' + esc(c.photo.privacy) + "</p>" +
         '<p class="confirm-demo">' + esc(c.demoLine) + "</p>" +
         '<div class="confirm-actions"><button type="button" class="btn btn-small" id="card-save">' + esc(c.saveLabel) + "</button>" +
         days.map(function (d) {
@@ -737,14 +747,119 @@
       card.focus({ preventScroll: true });
     }
     $("card-save").addEventListener("click", function () {
-      saveCard({ label: c.label, name: rec.name, title: regLine(rec), cue: D.meta.dateLine }, D.meta.shortName + "-walk-up.png");
+      saveCard({ label: c.label, name: rec.name, title: regLine(rec), cue: D.meta.dateLine, canvas: WU.canvas }, D.meta.shortName + "-walk-up.png");
     });
+    wireWalkupPhoto();
     $("reg-again").addEventListener("click", function () {
+      stopCamera();
+      WU.canvas = null;
       $("register").outerHTML = R.register();
       wireForm();
       $("f-first").focus();
     });
   }
+
+  // ---------- walk-up photo: camera or upload, duotoned on a canvas, memory only ----------
+  var WU = { stream: null, canvas: null, observer: null };
+  var SLOT_W = 480, SLOT_H = 600;
+  function wuEmpty() {
+    return '<div class="wu-empty">' + queueFigure(0) + '<p class="wu-empty-line">' + esc(D.registration.card.photo.empty) + "</p></div>";
+  }
+  function stopCamera() {
+    if (WU.stream) { WU.stream.getTracks().forEach(function (t) { t.stop(); }); WU.stream = null; }
+    var v = document.querySelector("#wu-slot video");
+    if (v) { v.srcObject = null; v.remove(); }
+    ["wu-snap", "wu-cancel"].forEach(function (id) { if ($(id)) $(id).hidden = true; });
+    if ($("wu-take")) $("wu-take").hidden = false;
+  }
+  // Ink in the shadows, host in the lights: the same duotone as the wall photos.
+  function duotone(ctx, w, h) {
+    var hc = hexRgb(cssVar("--host", "#FFC629")), ic = hexRgb(cssVar("--ink", "#101218"));
+    var data = ctx.getImageData(0, 0, w, h), d = data.data;
+    for (var i = 0; i < d.length; i += 4) {
+      var l = Math.min(1, ((0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255) * 1.08);
+      d[i] = ic[0] + (hc[0] - ic[0]) * l; d[i + 1] = ic[1] + (hc[1] - ic[1]) * l; d[i + 2] = ic[2] + (hc[2] - ic[2]) * l;
+    }
+    ctx.putImageData(data, 0, 0);
+  }
+  // Cover-crop any source into the 4:5 slot, optionally mirrored (camera preview is mirrored).
+  function toSlot(src, sw, sh, mirror) {
+    var cv = document.createElement("canvas");
+    cv.width = SLOT_W; cv.height = SLOT_H;
+    var ctx = cv.getContext("2d"), sc = Math.max(SLOT_W / sw, SLOT_H / sh), cw = SLOT_W / sc, ch = SLOT_H / sc;
+    if (mirror) { ctx.translate(SLOT_W, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(src, (sw - cw) / 2, (sh - ch) / 2, cw, ch, 0, 0, SLOT_W, SLOT_H);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    duotone(ctx, SLOT_W, SLOT_H);
+    return cv;
+  }
+  function showPhoto(cv) {
+    var slot = $("wu-slot"), p = D.registration.card.photo;
+    WU.canvas = cv;
+    cv.className = "wu-canvas";
+    slot.innerHTML = "";
+    slot.appendChild(cv);
+    slot.setAttribute("aria-label", p.labelPhoto);
+  }
+  function wuStatus(msg) { if ($("wu-status")) $("wu-status").textContent = msg || ""; }
+  function wireWalkupPhoto() {
+    var p = D.registration.card.photo, slot = $("wu-slot");
+    if (!slot) return;
+    var canCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    $("wu-take").addEventListener("click", function () {
+      wuStatus("");
+      if (!canCam) { wuStatus(p.none); $("wu-take").hidden = true; return; }
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false }).then(function (stream) {
+        stopCamera();
+        WU.stream = stream;
+        var v = document.createElement("video");
+        v.className = "wu-video"; v.muted = true; v.playsInline = true; v.autoplay = true;
+        v.setAttribute("playsinline", ""); v.srcObject = stream;
+        slot.innerHTML = ""; slot.appendChild(v);
+        slot.setAttribute("aria-label", p.labelLive);
+        v.play().catch(function () { /* autoplay may need the click; the stream still shows */ });
+        $("wu-take").hidden = true; $("wu-snap").hidden = false; $("wu-cancel").hidden = false;
+        $("wu-snap").focus();
+      }).catch(function (err) {
+        var denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
+        wuStatus(denied ? p.denied : p.none);
+        $("wu-take").hidden = true;
+      });
+    });
+    $("wu-snap").addEventListener("click", function () {
+      var v = document.querySelector("#wu-slot video");
+      if (!v || !v.videoWidth) return;
+      var cv = toSlot(v, v.videoWidth, v.videoHeight, true);
+      stopCamera();
+      showPhoto(cv);
+      $("wu-take").focus();
+    });
+    $("wu-cancel").addEventListener("click", function () {
+      stopCamera();
+      if (WU.canvas) showPhoto(WU.canvas);
+      else { slot.innerHTML = wuEmpty(); slot.setAttribute("aria-label", p.labelEmpty); }
+      $("wu-take").focus();
+    });
+    $("wu-upload").addEventListener("click", function () { $("wu-file").click(); });
+    $("wu-file").addEventListener("change", function () {
+      var f = this.files && this.files[0];
+      if (!f) return;
+      stopCamera();
+      var url = URL.createObjectURL(f), im = new Image();
+      im.onload = function () { showPhoto(toSlot(im, im.naturalWidth, im.naturalHeight, false)); URL.revokeObjectURL(url); wuStatus(""); };
+      im.onerror = function () { URL.revokeObjectURL(url); wuStatus(p.bad); };
+      im.src = url;
+      this.value = "";
+    });
+    // Leaving the section, hiding the tab or leaving the page stops the camera.
+    if (WU.observer) WU.observer.disconnect();
+    if ("IntersectionObserver" in window) {
+      WU.observer = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting) stopCamera(); }); });
+      WU.observer.observe($("register"));
+    }
+  }
+  document.addEventListener("visibilitychange", function () { if (document.hidden) stopCamera(); });
+  window.addEventListener("pagehide", stopCamera);
 
   // "See in agenda": switch day, scroll the session under the header, light only it, move focus to it.
   function goToSession(id, opts) {
@@ -861,7 +976,7 @@
     var numeralColor = cssVar("--host-deep", "#F0B000");
     var display = cssVar("--display", "sans-serif"), body = cssVar("--body", "sans-serif"), mono = cssVar("--mono", "monospace");
     var fontsReady = document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve();
-    Promise.all([fontsReady, loadImage(o.photo ? img(o.photo, 720, 860) : "")]).then(function (r) {
+    Promise.all([fontsReady, o.canvas ? Promise.resolve(o.canvas) : loadImage(o.photo ? img(o.photo, 720, 860) : "")]).then(function (r) {
       var photo = r[1];
       var cv = document.createElement("canvas");
       cv.width = W; cv.height = H;
@@ -885,12 +1000,7 @@
         var o2 = off.getContext("2d");
         o2.drawImage(photo, (photo.width - sw) / 2, (photo.height - sh) / 2, sw, sh, 0, 0, pw, ph);
         try {
-          var data = o2.getImageData(0, 0, pw, ph), d = data.data, hc = hexRgb(host), ic = hexRgb(ink);
-          for (var i = 0; i < d.length; i += 4) {
-            var l = Math.min(1, ((0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255) * 1.08);
-            d[i] = ic[0] + (hc[0] - ic[0]) * l; d[i + 1] = ic[1] + (hc[1] - ic[1]) * l; d[i + 2] = ic[2] + (hc[2] - ic[2]) * l;
-          }
-          o2.putImageData(data, 0, 0);
+          if (!o.canvas) duotone(o2, pw, ph); // a walk-up photo is already duotoned
           ctx.drawImage(off, px, py);
           textW = px - P - 32;
         } catch (e) { /* tainted canvas: leave the photo out */ }
