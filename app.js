@@ -743,8 +743,8 @@
   function phJudge(transcripts) {
     var ph = D.phrases, item = ph.items[PH.i], want = phWords(item.es), say = phSay(item), best = null;
     transcripts.forEach(function (t) {
-      var got = phWords(t), hitAll = item.accept && item.accept.some(function (a) { return phNorm(t).replace(/\s/g, "").indexOf(a) > -1; });
-      var marks = want.map(function (w) { return hitAll || got.indexOf(w) > -1; });
+      var got = phWords(t);
+      var marks = want.map(function (w) { return got.indexOf(w) > -1; });
       var n = marks.filter(Boolean).length;
       if (!best || n > best.n) best = { t: t, marks: marks, n: n };
     });

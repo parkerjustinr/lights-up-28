@@ -680,6 +680,21 @@
         "say": "DOHN-deh ehs-TAH ehl MEH-troh"
       },
       {
+        "es": "A la estación La Carolina, por favor.",
+        "en": "To La Carolina station, please.",
+        "say": "ah lah ehs-tah-SYOHN lah kah-roh-LEE-nah, pohr fah-VOHR"
+      },
+      {
+        "es": "Vengo a la conferencia.",
+        "en": "I'm here for the conference.",
+        "say": "BEHN-goh ah lah kohn-feh-REHN-syah"
+      },
+      {
+        "es": "¿Dónde está el baño?",
+        "en": "Where's the bathroom?",
+        "say": "DOHN-deh ehs-TAH ehl BAH-nyoh"
+      },
+      {
         "es": "Un café, por favor.",
         "en": "A coffee, please.",
         "say": "oon kah-FEH, pohr fah-VOHR"
@@ -695,13 +710,14 @@
         "say": "lah KWEHN-tah, pohr fah-VOHR"
       },
       {
-        "es": "¡Achachay!",
-        "en": "Brr, it's cold! A Kichwa word you'll hear all over Quito.",
-        "say": "ah-chah-CHAI",
-        "accept": [
-          "chach",
-          "achach"
-        ]
+        "es": "¿Me espera un momentito, por favor?",
+        "en": "Could you wait a moment for me, please? In Ecuador, \"-ito\" softens a request.",
+        "say": "meh ehs-PEH-rah oon moh-mehn-TEE-toh, pohr fah-VOHR"
+      },
+      {
+        "es": "¡Qué bestia!",
+        "en": "How crazy! An Ecuadorian way to say \"no way.\"",
+        "say": "keh BEHS-tyah"
       }
     ],
     "prev": "Previous",
