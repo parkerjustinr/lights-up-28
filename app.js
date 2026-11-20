@@ -209,6 +209,7 @@
         "</div>" +
         '<p class="sr" aria-live="polite" id="wall-live"></p>' +
       "</div>";
+    $("hero-moment").insertAdjacentHTML("afterend", renderDrawer());
     $("hero").innerHTML =
       '<div class="band">' +
         '<div class="band-text"><h1 id="hero-title">' + esc(h.title) + "</h1>" +
@@ -363,37 +364,74 @@
   }
 
   // ---------- Q7 · YOU: the registrant joins the back of the queue (memory only) ----------
-  var VIS = { joined: false, name: "", title: "", photo: "" };
+  var VIS = { joined: false, name: "", title: "", rec: null };
   function visitorCue() {
     return { cue: D.wall.you.cue, visitor: true, sp: { name: VIS.name }, s: { title: VIS.title, id: null, track: D.tracks[0].id }, day: null };
   }
+  function dpr() { return Math.max(1, Math.min(3, window.devicePixelRatio || 1)); }
+  // A duotone (ink to host) canvas of the visitor's original photo, cover-cropped to w x h, face kept
+  // near the top third (the crop of an unknown photo can't find the face, so it favours the upper part).
+  function youCanvas(w, h) {
+    var src = WU.src, cv = document.createElement("canvas");
+    cv.width = Math.max(1, Math.round(w)); cv.height = Math.max(1, Math.round(h));
+    if (!src) return cv;
+    var ctx = cv.getContext("2d"), sc = Math.max(cv.width / src.width, cv.height / src.height);
+    var sw = cv.width / sc, sh = cv.height / sc;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(src, (src.width - sw) / 2, Math.max(0, Math.min(src.height - sh, src.height * 0.38 - sh * 0.38)), sw, sh, 0, 0, cv.width, cv.height);
+    duotone(ctx, cv.width, cv.height);
+    return cv;
+  }
+  // The figure's photo head: drawn from the original at 3x its displayed size, circle mask, 1.5px ink ring.
+  function youHead() {
+    if (!WU.src) return "";
+    var shown = 10 / 60 * 58, S = Math.ceil(shown * 3 * dpr()), src = WU.src;
+    var cv = document.createElement("canvas"); cv.width = cv.height = S;
+    var ctx = cv.getContext("2d"), side = src.width * 0.42, sx = (src.width - side) / 2, sy = Math.max(0, src.height * 0.32 - side / 2);
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(src, sx, sy, side, side, 0, 0, S, S);
+    duotone(ctx, S, S);
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    var ring = 1.5 * S / shown;
+    ctx.lineWidth = ring; ctx.strokeStyle = cssVar("--ink", "#101218");
+    ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2 - ring / 2, 0, Math.PI * 2); ctx.stroke();
+    return cv.toDataURL("image/png");
+  }
   // The visitor's figure: same body as the others, a 2px paper outline, their photo as the head if they added one.
   function youFigure() {
-    var head = VIS.photo
-      ? '<defs><clipPath id="you-head"><circle cx="12" cy="6" r="5"/></clipPath></defs><circle class="you-ring" cx="12" cy="6" r="5"/>' +
-        '<image href="' + VIS.photo + '" x="7" y="0" width="10" height="12.5" preserveAspectRatio="xMidYMid slice" clip-path="url(#you-head)"/>'
-      : '<circle class="you-ring" cx="12" cy="6" r="5"/>';
-    return '<svg class="qf is-you" data-k="6" viewBox="0 0 28 60" style="--h:58px" focusable="false">' + head +
+    var head = youHead();
+    return '<svg class="qf is-you" data-k="6" viewBox="0 0 28 60" style="--h:58px" focusable="false">' +
+      '<circle class="you-ring" cx="12" cy="6" r="5"/>' +
+      (head ? '<image href="' + head + '" x="7" y="1" width="10" height="10"/>' : "") +
       '<path class="you-ring" d="M6 13h12l2 22h-3.2L15.4 60h-3L12 39l-.4 21h-3L7.2 35H4z"/></svg>';
   }
   function youShot() {
-    return VIS.photo
-      ? '<img class="wall-you" alt="" src="' + VIS.photo + '" data-cue="6">'
+    return WU.src
+      ? '<canvas class="wall-you" data-cue="6" aria-hidden="true"></canvas>'
       : '<div class="wall-empty" data-cue="6">' + queueFigure(0) + "</div>";
   }
+  // Q7's wall photo is drawn at the frame's real pixel size times devicePixelRatio, no CSS filters.
+  function drawYouWall() {
+    var cv = document.querySelector("#wall canvas.wall-you"), box = document.querySelector("#wall .stage-photo");
+    if (!cv || !box || !WU.src) return;
+    var w = box.clientWidth * dpr(), h = box.clientHeight * dpr(), src = youCanvas(w, h);
+    cv.width = src.width; cv.height = src.height;
+    cv.getContext("2d").drawImage(src, 0, 0);
+  }
   function refreshVisitor() {
-    var k = CUES.length - 1;
-    CUES[k] = visitorCue();
+    CUES[CUES.length - 1] = visitorCue();
     var old = document.querySelector('#wall .stage-photo [data-cue="6"]');
     if (old) { old.insertAdjacentHTML("afterend", youShot()); old.remove(); }
+    drawYouWall();
     var f = figK(6);
     if (f) { var x = f._x, vis = f.style.visibility; f.insertAdjacentHTML("afterend", youFigure()); f.remove(); f = figK(6); setX(f, x); f.style.visibility = vis; }
     cutTo(state.cue, false);
   }
   function joinQueue(rec, opts) {
     opts = opts || {};
-    VIS.name = rec.name; VIS.title = regLine(rec);
-    VIS.photo = WU.canvas ? WU.canvas.toDataURL("image/jpeg", 0.85) : "";
+    VIS.rec = rec; VIS.name = rec.name; VIS.title = regLine(rec);
     if (VIS.joined) { refreshVisitor(); }
     else {
       VIS.joined = true;
@@ -406,18 +444,18 @@
       b.addEventListener("click", function () { jumpTo(6); });
       $("wall").querySelector(".scanline").insertAdjacentHTML("beforebegin", youShot());
       $("wall").querySelector(".stage-photo [data-cue='6']").hidden = state.cue !== 6;
+      drawYouWall();
       $("queue").insertAdjacentHTML("beforeend", youFigure());
       cutTo(state.cue, false);
       var f = figK(6), g = qGeom();
       f.style.visibility = "visible";
       if (SHOT || opts.silent || Qs.busy) placeQueue(state.cue);
-      else move(f, g.enter, slotX(g, 6 - state.cue - 1), 4, 900, smoothOK() ? 500 : 0);
+      else move(f, g.enter, slotX(g, 6 - state.cue - 1), 4, 900);
     }
     if (!opts.silent) {
       var live = $("wall-live");
       live.textContent = "";
       setTimeout(function () { live.textContent = D.wall.you.joined; }, 30);
-      window.scrollTo({ top: 0, behavior: smoothOK() ? "smooth" : "instant" });
     }
   }
 
@@ -432,6 +470,8 @@
     $("wall-title").textContent = c.s.title;
     $("wall-cue").textContent = cueLine(c);
     $("wall-link").hidden = !!c.visitor;
+    var ph = document.querySelector("#wall .stage-photo");
+    if (ph) ph.classList.toggle("is-you", !!c.visitor && !!WU.src);
     if (!c.visitor) $("wall-link").setAttribute("href", "#session-" + c.s.id);
     Array.prototype.forEach.call(document.querySelectorAll("#wall .stage-photo [data-cue]"), function (im) {
       im.hidden = +im.getAttribute("data-cue") !== i;
@@ -497,7 +537,7 @@
     });
     placeQueue(state.cue);
     frameWallPhotos();
-    window.addEventListener("resize", function () { frameWallPhotos(); if (!Qs.busy) placeQueue(state.cue); });
+    window.addEventListener("resize", function () { frameWallPhotos(); drawYouWall(); if (!Qs.busy) placeQueue(state.cue); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!Qs.busy) placeQueue(state.cue); });
   }
 
@@ -851,27 +891,13 @@
     return '<input type="' + type + '" id="f-' + id + '" name="' + id + '" autocomplete="' + auto + '" required aria-describedby="e-' + id + '"' + (extra || "") + ">";
   }
 
+  // The bottom of the page: a slim ink band. Registration itself lives in the drawer under the wall.
   R.register = function () {
-    var r = D.registration, t = D.tickets, ts = r.teamSize;
-    var opts = t.tiers.map(function (x) { return '<option value="' + x.id + '">' + esc(x.name) + "</option>"; }).join("");
-    var sizes = "";
-    for (var i = ts.min; i <= ts.max; i++) sizes += '<option value="' + i + '">' + i + " people</option>";
-    return sectionShell("register", r.heading,
-      (r.intro ? '<p class="lede">' + copy(r.intro) + "</p>" : "") +
-      '<p class="demo" role="note">' + esc(r.demoNotice) + "</p>" +
-      '<div id="reg-out"><form class="reg-form" id="reg-form" novalidate>' +
-        '<div class="two-col">' +
-          field("first", "First name", textInput("first", "text", "given-name")) +
-          field("last", "Last name", textInput("last", "text", "family-name")) +
-        "</div>" +
-        field("email", "Work email", textInput("email", "email", "email", ' inputmode="email"')) +
-        field("company", "Company", textInput("company", "text", "organization")) +
-        '<div class="two-col">' +
-          field("tier", "Registration type", '<select id="f-tier" name="tier">' + opts + "</select>") +
-          field("size", ts.label, '<select id="f-size" name="size">' + sizes + "</select>", "field-size") +
-        "</div>" +
-        '<button type="submit" class="btn btn-primary" id="reg-submit">' + esc(r.submitLabel) + "</button>" +
-      "</form></div>");
+    var dr = D.registration.drawer;
+    return '<section class="section sec-register reg-band" id="register" aria-labelledby="register-title"><div class="wrap reg-band-row">' +
+      '<h2 class="reg-band-text" id="register-title">' + esc(dr.band) + "</h2>" +
+      '<button type="button" class="btn reg-band-btn" data-reg-open>' + esc(dr.bandCta) + ' <span class="arrow" aria-hidden="true">&rarr;</span></button>' +
+      "</div></section>";
   };
 
   R.faq = function () {
@@ -950,11 +976,137 @@
     setTier(state.tier);
   }
 
+  // ---------- the registration drawer, directly under the wall ----------
+  function renderDrawer() {
+    var r = D.registration, dr = r.drawer, c = r.card, ph = c.photo, t = D.tickets, ts = r.teamSize;
+    var opts = t.tiers.map(function (x) { return '<option value="' + x.id + '">' + esc(x.name) + "</option>"; }).join("");
+    var sizes = "";
+    for (var i = ts.min; i <= ts.max; i++) sizes += '<option value="' + i + '">' + i + " people</option>";
+    return '<div class="drawer" id="reg-drawer" role="region" aria-labelledby="drawer-title" hidden><div class="drawer-in">' +
+      '<div class="drawer-head"><h2 class="drawer-title" id="drawer-title">' + esc(dr.title) + "</h2>" +
+        '<button type="button" class="drawer-x" id="drawer-x" aria-label="' + esc(dr.close) + '"><span aria-hidden="true">&times;</span></button></div>' +
+      '<form class="drawer-form" id="reg-form" novalidate>' +
+        '<div class="dr-row">' +
+          field("first", "First name", textInput("first", "text", "given-name")) +
+          field("last", "Last name", textInput("last", "text", "family-name")) +
+          field("email", "Work email", textInput("email", "email", "email", ' inputmode="email"')) +
+        "</div>" +
+        '<div class="dr-row">' +
+          field("company", "Company", textInput("company", "text", "organization")) +
+          field("tier", "Registration type", '<select id="f-tier" name="tier">' + opts + "</select>") +
+          field("size", ts.label, '<select id="f-size" name="size">' + sizes + "</select>", "field-size") +
+        "</div>" +
+        '<div class="dr-foot">' +
+          '<div class="dr-photo"><span class="dr-thumb" id="wu-slot" role="img" aria-label="' + esc(ph.labelEmpty) + '">' + queueFigure(0) + "</span>" +
+            '<button type="button" class="linkish" id="wu-take">' + esc(ph.take) + "</button>" +
+            '<button type="button" class="linkish" id="wu-upload">' + esc(ph.upload) + "</button>" +
+            '<input type="file" id="wu-file" accept="image/*" hidden>' +
+            '<button type="button" class="linkish" id="wu-snap" hidden>' + esc(ph.snap) + "</button>" +
+            '<button type="button" class="linkish" id="wu-cancel" hidden>' + esc(ph.cancel) + "</button>" +
+            '<p class="wu-status" id="wu-status" role="status"></p></div>' +
+          '<div class="dr-submit"><button type="submit" class="btn dr-go" id="reg-submit">' + esc(dr.submit) + "</button>" +
+            '<p class="dr-demo">' + esc(dr.demo) + "</p></div>" +
+        "</div>" +
+      "</form>" +
+      '<div class="drawer-done" id="drawer-done" tabindex="-1" hidden><p class="dr-done-line">' + esc(dr.confirmed) + "</p>" +
+        '<p class="dr-links"><button type="button" class="linkish" id="walk-on">' + esc(dr.walkOn) + "</button>" +
+        '<button type="button" class="linkish" id="card-save">' + esc(c.saveLabel) + "</button>" +
+        '<button type="button" class="linkish" id="cal-all">' + esc(c.calendar) + "</button>" +
+        '<button type="button" class="linkish" id="reg-again">' + esc(c.againLabel) + "</button></p></div>" +
+    "</div></div>";
+  }
+  var DR = { trigger: null };
+  function drawerOpen() { var d = $("reg-drawer"); return d && !d.hidden; }
+  function setTriggersExpanded(on) {
+    Array.prototype.forEach.call(document.querySelectorAll('a[href="#register"], [data-reg-open]'), function (t) {
+      t.setAttribute("aria-controls", "reg-drawer"); t.setAttribute("aria-expanded", String(on));
+    });
+  }
+  // Scroll so the wall's floor line and the drawer are both in view.
+  function scrollToDrawer(instant) {
+    var floor = document.querySelector("#wall .stage-floor"), header = document.querySelector(".site-header");
+    if (!floor) return;
+    var off = SHOT || !header ? 8 : header.getBoundingClientRect().height + 12;
+    var top = floor.getBoundingClientRect().top + window.pageYOffset - off;
+    window.scrollTo({ top: Math.max(0, top), behavior: !instant && smoothOK() ? "smooth" : "instant" });
+  }
+  function openDrawer(trigger, opts) {
+    opts = opts || {};
+    var d = $("reg-drawer");
+    if (!d) return;
+    DR.trigger = trigger || null;
+    d.hidden = false;
+    setTriggersExpanded(true);
+    if (!opts.noScroll) scrollToDrawer();
+    if (!opts.noFocus) {
+      var done = $("drawer-done");
+      var target = done && !done.hidden ? done : $("f-first");
+      if (target) target.focus({ preventScroll: true });
+    }
+  }
+  function closeDrawer() {
+    var d = $("reg-drawer");
+    if (!d || d.hidden) return;
+    stopCamera();
+    d.hidden = true;
+    setTriggersExpanded(false);
+    if (DR.trigger && document.contains(DR.trigger)) DR.trigger.focus({ preventScroll: true });
+  }
+  function wireDrawer() {
+    var d = $("reg-drawer");
+    if (!d) return;
+    setTriggersExpanded(false);
+    // Every Register trigger opens (or closes) the drawer. Access's "Register as ..." already set the type.
+    document.addEventListener("click", function (e) {
+      var t = e.target.closest && e.target.closest('a[href="#register"], [data-reg-open]');
+      if (!t) return;
+      e.preventDefault();
+      if (drawerOpen()) closeDrawer(); else openDrawer(t);
+    });
+    $("drawer-x").addEventListener("click", closeDrawer);
+    d.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.preventDefault(); closeDrawer(); } });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && drawerOpen() && !d.contains(document.activeElement)) closeDrawer(); });
+    wireForm();
+    wirePhoto();
+    $("walk-on").addEventListener("click", function () { if (VIS.joined) { jumpTo(6); window.scrollTo({ top: 0, behavior: smoothOK() ? "smooth" : "instant" }); } });
+    $("card-save").addEventListener("click", function () {
+      if (!VIS.joined) return;
+      var c = visitorCue();
+      saveCard({ label: D.wall.label, name: c.sp.name, title: c.s.title, cue: cueLine(c), numeral: c.cue,
+        canvas: WU.src ? youCanvas(380, 478) : null, emptyFigure: !WU.src }, D.meta.shortName + "-q7.png");
+    });
+    $("cal-all").addEventListener("click", function () {
+      if (!VIS.rec) return;
+      var tierId = VIS.rec.tier.id;
+      var all = daysForTier(tierId).map(function (day) {
+        return { id: day.id, date: day.date, label: day.label, sessions: day.sessions.filter(function (s) { return !s.tiers || s.tiers.indexOf(tierId) > -1; }) };
+      });
+      downloadIcs(all, (D.meta.shortName || "event") + ".ics");
+    });
+    $("reg-again").addEventListener("click", function () {
+      stopCamera();
+      WU.src = null;
+      $("reg-form").reset();
+      Array.prototype.forEach.call($("reg-form").querySelectorAll("[aria-invalid]"), function (el) { el.removeAttribute("aria-invalid"); });
+      Array.prototype.forEach.call($("reg-form").querySelectorAll(".error"), function (el) { el.textContent = ""; });
+      setTier(state.tier);
+      resetThumb();
+      $("drawer-done").hidden = true;
+      $("reg-form").hidden = false;
+      $("f-first").focus();
+    });
+  }
   function wireForm() {
     var form = $("reg-form");
     if (!form) return;
     form.elements.tier.addEventListener("change", function () { setTier(form.elements.tier.value); });
     if (state.tier) setTier(state.tier);
+    // A fixed field drops its error straight away.
+    ["first", "last", "email", "company"].forEach(function (name) {
+      form.elements[name].addEventListener("input", function () {
+        if (this.getAttribute("aria-invalid") === "true" && this.value.trim()) { this.setAttribute("aria-invalid", "false"); $("e-" + name).textContent = ""; }
+      });
+    });
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var first = null;
@@ -971,14 +1123,14 @@
       check("email", !ev ? "Enter your work email." : (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ev) ? "" : "Check the email format, for example name@company.com."));
       check("company", val("company") ? "" : "Enter your company.");
       if (first) {
-        // Focus the first problem and bring its field, message included, into view.
+        // Focus the first problem and keep its field, message included, in view.
         first.focus({ preventScroll: true });
         first.closest(".field").scrollIntoView({ block: "center", behavior: smoothOK() ? "smooth" : "instant" });
         return;
       }
       var tier = byId(D.tickets.tiers, form.elements.tier.value);
       confirmReg({ name: val("first") + " " + val("last"), company: val("company"), tier: tier,
-        size: tier.id === "team" ? form.elements.size.value : "" }, true);
+        size: tier.id === "team" ? form.elements.size.value : "" }, { focus: true });
     });
   }
 
@@ -991,69 +1143,27 @@
     return rec.company + " · " + rec.tier.name + (rec.size ? ", " + rec.size + " people" : "");
   }
 
-  // The walk-up title card: the wall's own stage component with the registrant on it. It cuts in.
-  function confirmReg(rec, focus) {
-    var c = D.registration.card, days = daysForTier(rec.tier.id);
-    $("reg-out").innerHTML =
-      '<div class="confirm" role="status" tabindex="-1" id="reg-confirm">' +
-        '<div class="stage walkup"><div class="stage-body wu-body"><div class="stage-copy">' +
-          stageCopy({ label: c.label, name: rec.name, title: regLine(rec), cue: D.meta.dateLine }) +
-        "</div>" + '<div class="wu-slot" id="wu-slot" role="img" aria-label="' + esc(c.photo.labelEmpty) + '">' + wuEmpty() + "</div>" +
-        '</div><div class="stage-floor" aria-hidden="true"></div></div>' +
-        '<div class="wu-actions">' +
-          '<button type="button" class="btn btn-small" id="wu-take">' + esc(c.photo.take) + "</button>" +
-          '<button type="button" class="btn btn-small" id="wu-upload">' + esc(c.photo.upload) + "</button>" +
-          '<input type="file" id="wu-file" accept="image/*" hidden>' +
-          '<button type="button" class="btn btn-primary btn-small" id="wu-snap" hidden>' + esc(c.photo.snap) + "</button>" +
-          '<button type="button" class="btn btn-small" id="wu-cancel" hidden>' + esc(c.photo.cancel) + "</button>" +
-        "</div>" +
-        '<p class="wu-status" id="wu-status" role="status"></p>' +
-        '<p class="wu-privacy">' + esc(c.photo.privacy) + "</p>" +
-        '<button type="button" class="btn wu-join" id="wu-join">' + esc(c.join) + ' <span class="arrow" aria-hidden="true">&rarr;</span></button>' +
-        '<p class="wu-links"><button type="button" class="linkish" id="card-save">' + esc(c.saveLabel) + "</button>" +
-          '<button type="button" class="linkish" id="cal-all">' + esc(c.calendar) + "</button>" +
-          '<button type="button" class="linkish" id="reg-again">' + esc(c.againLabel) + "</button></p>" +
-        '<p class="confirm-demo">' + esc(c.demoLine) + "</p>" +
-      "</div>";
-    fitNames();
-    if (focus) {
-      var card = $("reg-confirm"), header = document.querySelector(".site-header");
-      var top = card.getBoundingClientRect().top + window.pageYOffset - (header ? header.getBoundingClientRect().height : 0) - 16;
-      window.scrollTo({ top: top, behavior: smoothOK() ? "smooth" : "instant" });
-      card.focus({ preventScroll: true });
-    }
-    $("card-save").addEventListener("click", function () {
-      saveCard({ label: c.label, name: rec.name, title: regLine(rec), cue: D.meta.dateLine, canvas: WU.canvas }, D.meta.shortName + "-walk-up.png");
-    });
-    wireWalkupPhoto();
-    $("wu-join").addEventListener("click", function () { joinQueue(rec); });
-    $("cal-all").addEventListener("click", function () {
-      var all = days.map(function (day) {
-        return { id: day.id, date: day.date, label: day.label, sessions: day.sessions.filter(function (s) { return !s.tiers || s.tiers.indexOf(rec.tier.id) > -1; }) };
-      });
-      downloadIcs(all, (D.meta.shortName || "event") + ".ics");
-    });
-    $("reg-again").addEventListener("click", function () {
-      stopCamera();
-      WU.canvas = null;
-      $("register").outerHTML = R.register();
-      wireForm();
-      $("f-first").focus();
-    });
+  // A valid submit: the drawer collapses to one line, and the visitor joins the queue as Q7 at once.
+  function confirmReg(rec, opts) {
+    opts = opts || {};
+    stopCamera();
+    $("reg-form").hidden = true;
+    $("drawer-done").hidden = false;
+    joinQueue(rec, { silent: !!opts.silent });
+    if (opts.focus) { scrollToDrawer(); $("drawer-done").focus({ preventScroll: true }); }
   }
 
-  // ---------- walk-up photo: camera or upload, duotoned on a canvas, memory only ----------
-  var WU = { stream: null, canvas: null, observer: null };
-  var SLOT_W = 480, SLOT_H = 600;
-  function wuEmpty() {
-    return '<div class="wu-empty">' + queueFigure(0) + '<p class="wu-empty-line">' + esc(D.registration.card.photo.empty) + "</p></div>";
-  }
+  // ---------- registrant photo: camera or upload, kept in memory only ----------
+  var WU = { stream: null, src: null, observer: null };
+  var SRC_W = 960, SRC_H = 1200;
   function stopCamera() {
     if (WU.stream) { WU.stream.getTracks().forEach(function (t) { t.stop(); }); WU.stream = null; }
     var v = document.querySelector("#wu-slot video");
     if (v) { v.srcObject = null; v.remove(); }
     ["wu-snap", "wu-cancel"].forEach(function (id) { if ($(id)) $(id).hidden = true; });
     if ($("wu-take")) $("wu-take").hidden = false;
+    if ($("wu-upload")) $("wu-upload").hidden = false;
+    if ($("wu-slot") && !$("wu-slot").querySelector("img,svg")) resetThumb();
   }
   // Ink in the shadows, host in the lights: the same duotone as the wall photos.
   function duotone(ctx, w, h) {
@@ -1065,28 +1175,36 @@
     }
     ctx.putImageData(data, 0, 0);
   }
-  // Cover-crop any source into the 4:5 slot, optionally mirrored (camera preview is mirrored).
-  function toSlot(src, sw, sh, mirror) {
+  // Keep the original (not duotoned), cover-cropped to 4:5 at a generous size; every view is drawn from it.
+  function toSource(src, sw, sh, mirror) {
     var cv = document.createElement("canvas");
-    cv.width = SLOT_W; cv.height = SLOT_H;
-    var ctx = cv.getContext("2d"), sc = Math.max(SLOT_W / sw, SLOT_H / sh), cw = SLOT_W / sc, ch = SLOT_H / sc;
-    if (mirror) { ctx.translate(SLOT_W, 0); ctx.scale(-1, 1); }
-    ctx.drawImage(src, (sw - cw) / 2, (sh - ch) / 2, cw, ch, 0, 0, SLOT_W, SLOT_H);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    duotone(ctx, SLOT_W, SLOT_H);
+    cv.width = SRC_W; cv.height = SRC_H;
+    var ctx = cv.getContext("2d"), sc = Math.max(SRC_W / sw, SRC_H / sh), cw = SRC_W / sc, ch = SRC_H / sc;
+    if (mirror) { ctx.translate(SRC_W, 0); ctx.scale(-1, 1); }
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(src, (sw - cw) / 2, (sh - ch) / 2, cw, ch, 0, 0, SRC_W, SRC_H);
     return cv;
   }
-  function showPhoto(cv) {
+  function resetThumb() {
+    var slot = $("wu-slot");
+    if (!slot) return;
+    slot.innerHTML = queueFigure(0);
+    slot.setAttribute("aria-label", D.registration.card.photo.labelEmpty);
+  }
+  function showPhoto(src) {
     var slot = $("wu-slot"), p = D.registration.card.photo;
-    WU.canvas = cv;
-    if (VIS.joined) { VIS.photo = cv.toDataURL("image/jpeg", 0.85); refreshVisitor(); }
-    cv.className = "wu-canvas";
-    slot.innerHTML = "";
-    slot.appendChild(cv);
+    WU.src = src;
+    var S = 56 * dpr(), cv = document.createElement("canvas"), side = src.width * 0.7;
+    cv.width = cv.height = S;
+    var ctx = cv.getContext("2d");
+    ctx.drawImage(src, (src.width - side) / 2, Math.max(0, src.height * 0.38 - side / 2), side, side, 0, 0, S, S);
+    duotone(ctx, S, S);
+    slot.innerHTML = '<img alt="" src="' + cv.toDataURL("image/png") + '">';
     slot.setAttribute("aria-label", p.labelPhoto);
+    if (VIS.joined) refreshVisitor();
   }
   function wuStatus(msg) { if ($("wu-status")) $("wu-status").textContent = msg || ""; }
-  function wireWalkupPhoto() {
+  function wirePhoto() {
     var p = D.registration.card.photo, slot = $("wu-slot");
     if (!slot) return;
     var canCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
@@ -1102,7 +1220,7 @@
         slot.innerHTML = ""; slot.appendChild(v);
         slot.setAttribute("aria-label", p.labelLive);
         v.play().catch(function () { /* autoplay may need the click; the stream still shows */ });
-        $("wu-take").hidden = true; $("wu-snap").hidden = false; $("wu-cancel").hidden = false;
+        $("wu-take").hidden = true; $("wu-upload").hidden = true; $("wu-snap").hidden = false; $("wu-cancel").hidden = false;
         $("wu-snap").focus();
       }).catch(function (err) {
         var denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
@@ -1113,15 +1231,14 @@
     $("wu-snap").addEventListener("click", function () {
       var v = document.querySelector("#wu-slot video");
       if (!v || !v.videoWidth) return;
-      var cv = toSlot(v, v.videoWidth, v.videoHeight, true);
+      var src = toSource(v, v.videoWidth, v.videoHeight, true);
       stopCamera();
-      showPhoto(cv);
+      showPhoto(src);
       $("wu-take").focus();
     });
     $("wu-cancel").addEventListener("click", function () {
       stopCamera();
-      if (WU.canvas) showPhoto(WU.canvas);
-      else { slot.innerHTML = wuEmpty(); slot.setAttribute("aria-label", p.labelEmpty); }
+      if (WU.src) showPhoto(WU.src); else resetThumb();
       $("wu-take").focus();
     });
     $("wu-upload").addEventListener("click", function () { $("wu-file").click(); });
@@ -1130,16 +1247,15 @@
       if (!f) return;
       stopCamera();
       var url = URL.createObjectURL(f), im = new Image();
-      im.onload = function () { showPhoto(toSlot(im, im.naturalWidth, im.naturalHeight, false)); URL.revokeObjectURL(url); wuStatus(""); };
+      im.onload = function () { showPhoto(toSource(im, im.naturalWidth, im.naturalHeight, false)); URL.revokeObjectURL(url); wuStatus(""); };
       im.onerror = function () { URL.revokeObjectURL(url); wuStatus(p.bad); };
       im.src = url;
       this.value = "";
     });
-    // Leaving the section, hiding the tab or leaving the page stops the camera.
-    if (WU.observer) WU.observer.disconnect();
+    // Leaving the drawer, hiding the tab or leaving the page stops the camera.
     if ("IntersectionObserver" in window) {
       WU.observer = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting) stopCamera(); }); });
-      WU.observer.observe($("register"));
+      WU.observer.observe($("reg-drawer"));
     }
   }
   document.addEventListener("visibilitychange", function () { if (document.hidden) stopCamera(); });
@@ -1289,10 +1405,21 @@
           o2.drawImage(photo, fr.x, fr.y, fr.w, fr.h);
         }
         try {
-          if (!o.canvas) duotone(o2, pw, ph); // a walk-up photo is already duotoned
+          if (!o.canvas) duotone(o2, pw, ph); // a visitor photo is already duotoned
           ctx.drawImage(off, px, py);
           textW = px - P - 32;
         } catch (e) { /* tainted canvas: leave the photo out */ }
+      }
+      if (!photo && o.emptyFigure) {
+        // No photo: the empty-state figure on its own floor line, where the photo would be.
+        var ex = W - P - 380, ew = 380, eb = floorY - 70;
+        ctx.fillStyle = onHost;
+        ctx.fillRect(ex + 60, eb, ew - 120, 3);
+        ctx.save(); ctx.translate(ex + ew / 2 - 12 * 4.2, eb - 60 * 4.2); ctx.scale(4.2, 4.2);
+        ctx.beginPath(); ctx.arc(12, 6, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fill(new Path2D("M6 13h12l2 22h-3.2L15.4 60h-3L12 39l-.4 21h-3L7.2 35H4z"));
+        ctx.restore();
+        textW = ex - P - 32;
       }
       ctx.fillStyle = onHost;
       ctx.textBaseline = "alphabetic";
@@ -1316,7 +1443,7 @@
       var mark = D.meta.host;
       ctx.fillText(mark, W - P - ctx.measureText(mark).width, floorY + 50);
       // Standing figure on the floor line, for scale.
-      ctx.save(); ctx.translate((photo ? W - P - 380 - 34 : W - P - 40), floorY - 64); ctx.scale(64 / 56, 64 / 56);
+      ctx.save(); ctx.translate((photo || o.emptyFigure ? W - P - 380 - 34 : W - P - 40), floorY - 64); ctx.scale(64 / 56, 64 / 56);
       ctx.beginPath(); ctx.arc(10, 5, 4.5, 0, Math.PI * 2); ctx.fill();
       ctx.fill(new Path2D("M5 12h10l1.5 20h-3L13 54H10.8L10 36l-.8 18H7l-.5-22h-3z"));
       ctx.restore();
@@ -1327,15 +1454,21 @@
   // ---------- URL switches ----------
   function applyNameParam() {
     if (!NAME_PARAM) return;
+    var sd = D.registration.shotDefaults, tier = byId(D.tickets.tiers, sd.tier);
     if (SHOT) {
-      var sd = D.registration.shotDefaults, tier = byId(D.tickets.tiers, sd.tier);
       setTier(tier.id);
-      confirmReg({ name: NAME_PARAM, company: sd.company, tier: tier, size: "" }, false);
+      var rec = { name: NAME_PARAM, company: sd.company, tier: tier, size: "" };
+      if (parseInt(Q.get("q"), 10) === 7) { joinQueue(rec, { silent: true }); return; }
+      // ?shot=1&n=Name: the drawer's confirmed line under the wall, the figure at the back of the queue.
+      confirmReg(rec, { silent: true });
+      $("reg-drawer").hidden = false;
       return;
     }
+    // ?n=Name: prefill the drawer's name fields and open it.
     var n = splitName(NAME_PARAM);
     if ($("f-first")) $("f-first").value = n.first;
     if ($("f-last")) $("f-last").value = n.last;
+    openDrawer($("header-cta"));
   }
   function markShotReady() {
     if (!SHOT) return;
@@ -1370,14 +1503,10 @@
       if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
       renderChrome();
-      wireWall(); wireTabs(); wireMatrix(); wireForm(); wireGlobal(); wirePhrases();
+      wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases();
       applyNameParam();
       // ?shot=1&q=7&n=Name: the registrant is already on the wall as Q7, empty photo state.
-      if (SHOT && shotQ === 7 && NAME_PARAM) {
-        var sd = D.registration.shotDefaults;
-        joinQueue({ name: NAME_PARAM, company: sd.company, tier: byId(D.tickets.tiers, sd.tier), size: "" }, { silent: true });
-        cutTo(6, false); placeQueue(6);
-      }
+      if (SHOT && shotQ === 7 && NAME_PARAM && VIS.joined) { cutTo(6, false); placeQueue(6); }
       fitNames();
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNames);
       window.addEventListener("resize", fitNames);

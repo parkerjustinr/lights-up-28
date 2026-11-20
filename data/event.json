@@ -749,7 +749,7 @@
         "none": "No camera found here. You can still upload a photo.",
         "bad": "That file didn't open as an image. Try another one.",
         "labelEmpty": "No photo yet",
-        "labelPhoto": "Your photo, in the wall's colors",
+        "labelPhoto": "Your photo",
         "labelLive": "Camera preview"
       },
       "join": "Join the queue",
@@ -763,6 +763,17 @@
       "label": "Team size",
       "min": 2,
       "max": 5
+    },
+    "drawer": {
+      "title": "Register",
+      "close": "Close registration",
+      "submit": "Register",
+      "demo": "Demo only. Nothing is sent anywhere.",
+      "confirmed": "You're Q7. Press GO to walk on.",
+      "walkOn": "Walk on now",
+      "photoLabel": "Photo",
+      "band": "Free for Tarnell customers.",
+      "bandCta": "Register"
     }
   },
   "faq": {

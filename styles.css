@@ -129,8 +129,10 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
    with headroom above the hair and the chin fully in, at any frame shape. These are the no-JS defaults. */
 .stage-photo img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 50%; filter: grayscale(1) contrast(1.1) brightness(1.06); mix-blend-mode: multiply; }
 .stage-photo::after { content: ""; position: absolute; inset: 0; background: var(--ink); mix-blend-mode: screen; pointer-events: none; }
-/* Q7 · YOU on the wall: the registrant's duotone photo, or the empty figure on a floor line. */
-.stage-photo .wall-you { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 30%; }
+/* Q7 · YOU on the wall: the registrant's photo drawn on a canvas at real pixel size (no CSS filters),
+   or the empty figure on a floor line. */
+.stage-photo .wall-you { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.stage-photo.is-you::after { display: none; }
 .wall-empty { position: absolute; inset: 0; }
 .wall-empty::before { content: ""; position: absolute; left: 16%; right: 16%; bottom: 14%; height: 2px; background: var(--ink); }
 .stage-photo .wall-empty .qf { position: absolute; left: 50%; bottom: calc(14% + 2px); height: 56%; width: auto; aspect-ratio: 28 / 60; transform: translateX(-50%); }
@@ -418,68 +420,56 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .ph-privacy { margin: 12px 0 0; font-size: 0.95rem; }
 .btn[disabled] { opacity: 0.6; cursor: default; }
 
-/* ---------- Register: a full ink field, the form on paper inside it ---------- */
-.sec-register { background: var(--ink); color: var(--paper); border-bottom: 0; }
-.sec-register .lede { color: var(--paper); }
-@media (min-width: 960px) {
-  .sec-register .wrap { display: grid; grid-template-columns: 4fr 8fr; column-gap: 40px; align-items: start; }
-  .sec-register .wrap > * { grid-column: 1; }
-  .sec-register #reg-out { grid-column: 2; grid-row: 1 / span 4; }
-  .sec-register #reg-out:has(.confirm) { grid-column: 1 / -1; grid-row: auto; margin-top: 8px; }
-}
-.sec-register :focus-visible { outline-color: var(--paper); }
-.demo { font-weight: 700; font-size: 0.95rem; max-width: 760px; }
-.reg-form { display: grid; gap: 20px; max-width: 760px; background: var(--paper); color: var(--ink); padding: 24px 18px; }
-.reg-form :focus-visible { outline-color: var(--ink); }
-.field { display: grid; gap: 6px; align-content: start; }
-.field label { font-weight: 700; }
-.field input, .field select, .field textarea { font: inherit; color: var(--ink); background: #fff; border: var(--rule); border-radius: var(--radius); padding: 12px; min-height: 50px; width: 100%; }
-.error { color: var(--ink); font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
-.error::before { content: "!"; flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 0.85em; }
+/* ---------- Registration drawer: a full-width ink field directly under the wall ---------- */
+.drawer { background: var(--ink); color: var(--paper); border-bottom: var(--rule); }
+.drawer-in { position: relative; padding: 16px var(--wall-pad) 20px; }
+.drawer :focus-visible { outline-color: var(--paper); }
+.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.drawer-title { font-size: 1.6rem; font-stretch: 110%; }
+.drawer-x { appearance: none; background: transparent; border: 2px solid var(--paper); color: var(--paper); width: 40px; height: 40px; font-size: 1.5rem; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
+html:not([data-shot]) .drawer-x:hover { background: var(--paper); color: var(--ink); }
+.drawer:has(#drawer-done:not([hidden])) .drawer-head { position: absolute; right: var(--wall-pad); top: 10px; margin: 0; }
+.drawer:has(#drawer-done:not([hidden])) .drawer-title { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.drawer-form { display: grid; gap: 12px; }
+.dr-row { display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; align-content: start; }
+.field label { font-weight: 700; font-size: 0.95rem; }
+.field input, .field select, .field textarea { font: inherit; color: var(--ink); background: #fff; border: 2px solid var(--ink); border-radius: var(--radius); padding: 9px 10px; min-height: 44px; width: 100%; }
+.drawer .field input, .drawer .field select { border-color: var(--paper); }
+.error { color: var(--paper); font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 8px; }
+.error::before { content: "!"; flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; background: var(--paper); color: var(--ink); font-size: 0.85em; }
 .error:empty { display: none; }
-[aria-invalid="true"] { border-width: 4px !important; border-color: var(--ink) !important; }
-.two-col { display: grid; gap: 20px; }
-@media (min-width: 640px) { .two-col { grid-template-columns: 1fr 1fr; } .reg-form { padding: 28px; } }
-.reg-form .btn { justify-self: start; }
-.confirm { max-width: 1180px; }
-.confirm:focus { outline: none; }
-.walkup { padding-bottom: 28px; }
-.walkup .stage-body { display: block; padding-top: 24px; padding-bottom: 12px; }
-.walkup .stage-copy { display: block; max-width: none; }
-.walkup .stage-title { margin-top: 10px; }
-.walkup .stage-name .nm { display: block; }
-.walkup .stage-figure { right: 8px; }
-@media (min-width: 720px) {
-  .walkup { padding-bottom: 36px; }
-  .walkup .stage-body { padding-top: 40px; padding-bottom: 16px; }
-  .walkup .stage-name .nm { display: inline; }
-}
-.confirm-demo { margin: 14px 0 14px; font-weight: 700; }
-/* Walk-up photo slot: the card's own photo area, 4:5, in the wall's duotone. */
-.wu-body { display: grid !important; grid-template-areas: none !important; grid-template-columns: minmax(0, 1fr) auto; column-gap: 20px; align-items: end; }
-.wu-slot { width: clamp(110px, 26vw, 260px); aspect-ratio: 4 / 5; position: relative; overflow: hidden; background: var(--host); border: 2px solid var(--ink); align-self: end; }
-.wu-canvas, .wu-video { width: 100%; height: 100%; object-fit: cover; display: block; }
+[aria-invalid="true"] { outline: 3px solid var(--paper); outline-offset: 2px; }
+.dr-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin-top: 4px; }
+.dr-photo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.dr-thumb { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: var(--host); border: 2px solid var(--paper); display: grid; place-items: center; flex: 0 0 auto; }
+.dr-thumb img, .dr-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dr-thumb .qf { position: static; height: 38px; width: auto; aspect-ratio: 28 / 60; }
 .wu-video { transform: scaleX(-1); filter: grayscale(1) contrast(1.1); mix-blend-mode: multiply; }
-.wu-empty { position: absolute; inset: 0; }
-.wu-empty::before { content: ""; position: absolute; left: 14%; right: 14%; bottom: 30%; height: 2px; background: var(--ink); }
-.wu-empty .qf { position: absolute; left: 50%; bottom: calc(30% + 2px); height: 42%; width: auto; aspect-ratio: 28 / 60; transform: translateX(-50%); }
-.wu-empty-line { position: absolute; left: 10px; right: 10px; bottom: 10px; margin: 0; font-family: var(--mono); font-weight: 500; font-size: clamp(0.72rem, 1.4vw, 0.95rem); line-height: 1.25; text-align: left; }
-.wu-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-.wu-join { margin-top: 18px; min-height: 54px; padding: 12px 26px; font-size: 1.15rem; background: var(--host); border-color: var(--host); color: var(--ink); }
-html:not([data-shot]) .sec-register .wu-join:hover { background: var(--paper); border-color: var(--paper); color: var(--ink); }
-.wu-links { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 16px 0 0; }
+.wu-status:empty { display: none; }
+.wu-status { margin: 0; font-weight: 700; flex-basis: 100%; }
+.dr-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.dr-go { background: var(--host); border-color: var(--host); color: var(--ink); min-width: 160px; }
+html:not([data-shot]) .drawer .dr-go:hover { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+.dr-demo { margin: 0; font-size: 0.92rem; font-weight: 700; }
+.drawer-done { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; padding-right: 52px; min-height: 40px; }
+.drawer-done:focus { outline: none; }
+.drawer-done[hidden] { display: none; }
+.dr-done-line { margin: 0; font-family: var(--display); font-weight: 800; font-stretch: 105%; font-size: 1.35rem; }
+.dr-links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0; }
 .linkish { appearance: none; background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 html:not([data-shot]) .linkish:hover { text-decoration-thickness: 3px; }
-.wu-status:empty { display: none; }
-.wu-status { margin: 10px 0 0; font-weight: 700; }
-.wu-privacy { margin: 10px 0 0; font-size: 0.95rem; }
-.sec-register .wu-actions .btn:not(.btn-primary) { color: var(--paper); border-color: var(--paper); }
-.sec-register .wu-actions .btn-primary { background: var(--host); border-color: var(--host); color: var(--ink); }
-html:not([data-shot]) .sec-register .wu-actions .btn:hover { background: var(--host); border-color: var(--host); color: var(--ink); }
-@media (max-width: 479px) { .wu-body { grid-template-columns: 1fr; row-gap: 14px; } .wu-slot { width: 150px; } }
-.confirm-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.sec-register .confirm-actions .btn { color: var(--paper); border-color: var(--paper); }
-html:not([data-shot]) .sec-register .confirm-actions .btn:hover { background: var(--host); border-color: var(--host); color: var(--ink); }
+@media (min-width: 760px) {
+  .dr-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* ---------- the bottom Register band: slim, ink ---------- */
+.sec-register { background: var(--ink); color: var(--paper); border-bottom: 0; padding: 28px 0; }
+.sec-register :focus-visible { outline-color: var(--paper); }
+.reg-band-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; }
+.reg-band-text { font-size: clamp(1.6rem, 4vw, 2.6rem); font-stretch: 110%; margin: 0; }
+.reg-band-btn { background: var(--host); border-color: var(--host); color: var(--ink); min-width: 180px; }
+html:not([data-shot]) .sec-register .reg-band-btn:hover { background: var(--paper); border-color: var(--paper); color: var(--ink); }
 
 /* ---------- FAQ: big heading beside ruled rows ---------- */
 .faq-layout { display: grid; gap: 8px; }
