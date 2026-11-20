@@ -25,7 +25,20 @@
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
   // [PLACEHOLDER] markers get a visible tag so draft copy is obvious on the page.
-  function copy(v) { return esc(v).replace(/\[PLACEHOLDER\]\s?/g, '<span class="ph">Placeholder</span> '); }
+  function copy(v) { return esc(times(v)).replace(/\[PLACEHOLDER\]\s?/g, '<span class="ph">Placeholder</span> '); }
+  // Times written in copy as {{2028-04-11 18:30}} (event time) follow "Show my time", with a zone label.
+  // "|day" adds the date; a later time in the same string only repeats the date if it differs.
+  function times(v) {
+    var lastDay = "";
+    return String(v == null ? "" : v).replace(/\{\{(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})(\|day)?\}\}/g, function (m, date, time, withDay) {
+      if (!D) return m;
+      var t = zoned(date, time), tz = viewTz();
+      var day = t.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: tz });
+      var showDay = withDay || (lastDay && day !== lastDay);
+      lastDay = day;
+      return (showDay ? day + ", " : "") + fmtTime(t) + " " + tzShort(tz, t);
+    });
+  }
   function $(id) { return document.getElementById(id); }
   function byId(list, id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
   function trackIndex(id) { for (var i = 0; i < D.tracks.length; i++) if (D.tracks[i].id === id) return i + 1; return 0; }
@@ -112,18 +125,29 @@
   function icsStamp(d) { return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); }
   function icsText(v) { return String(v || "").replace(/\[PLACEHOLDER\]\s?/g, "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n"); }
   function downloadIcs(days, filename) {
-    var loc = [D.meta.venue, D.meta.city].filter(Boolean).join(", ");
+    var loc = D.meta.icsLocation || [D.meta.venue, D.meta.city].filter(Boolean).join(", ");
     var lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Event Kit//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
     days.forEach(function (day) {
       day.sessions.forEach(function (s) {
         var t = sessionTimes(day, s), tr = s.track ? byId(D.tracks, s.track) : null;
         lines.push("BEGIN:VEVENT", "UID:" + s.id + "-" + D.meta.year + "@event-kit", "DTSTAMP:" + D.meta.icsStamp,
           "DTSTART:" + icsStamp(t.start), "DTEND:" + icsStamp(t.end), "SUMMARY:" + icsText(D.meta.name + ": " + s.title),
-          "DESCRIPTION:" + icsText(s.detail), "LOCATION:" + icsText((tr ? tr.name + ", " : "") + loc), "END:VEVENT");
+          "DESCRIPTION:" + icsText([tr ? tr.name : "", s.detail].filter(Boolean).join(". ")), "LOCATION:" + icsText(loc), "END:VEVENT");
       });
     });
     lines.push("END:VCALENDAR");
-    saveBlob(new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" }), filename);
+    saveBlob(new Blob([lines.map(icsFold).join("\r\n")], { type: "text/calendar;charset=utf-8" }), filename);
+  }
+  // RFC 5545: lines longer than 75 octets fold, continuing on a line that starts with one space.
+  function icsFold(line) {
+    var out = [], cur = "", bytes = 0, limit = 75;
+    Array.from(line).forEach(function (ch) {
+      var b = unescape(encodeURIComponent(ch)).length;
+      if (bytes + b > limit) { out.push(cur); cur = " "; bytes = 1; limit = 75; }
+      cur += ch; bytes += b;
+    });
+    out.push(cur);
+    return out.join("\r\n");
   }
   function saveBlob(blob, filename) {
     var a = document.createElement("a");
@@ -160,8 +184,9 @@
   }
   function cueLine(c) {
     if (c.visitor) return c.cue + " · " + D.wall.you.cueLine + " · " + D.tracks[0].name;
-    var t = zoned(c.day.date, c.s.start), tr = byId(D.tracks, c.s.track);
-    return c.cue + " · " + c.day.short + " " + fmtTime(t, D.meta.timezone) + " " + D.meta.tzLabel + (tr ? " · " + tr.name : "");
+    var t = zoned(c.day.date, c.s.start), tr = byId(D.tracks, c.s.track), tz = viewTz();
+    var day = tz === D.meta.timezone ? c.day.short : t.toLocaleDateString("en-US", { weekday: "short", timeZone: tz });
+    return c.cue + " · " + day + " " + fmtTime(t) + " " + tzShort(tz, t) + (tr ? " · " + tr.name : "");
   }
 
   // ---------- stage: the wall and the walk-up card share this ----------
@@ -1337,11 +1362,12 @@
     // Re-render the time-dependent sections in place, keeping the selected day.
     var sel = document.querySelector('#schedule [role="tab"][aria-selected="true"]');
     var selId = sel ? sel.id : null;
-    ["schedule", "tickets"].forEach(function (id) {
+    ["schedule", "tickets", "venue", "faq"].forEach(function (id) {
       var old = $(id);
       if (old && R[id]) old.outerHTML = R[id]();
     });
     wireTabs(); wireMatrix();
+    if (CUES[state.cue]) $("wall-cue").textContent = cueLine(CUES[state.cue]);
     if (selId && $(selId)) selectTab($(selId), false);
   }
 
@@ -1370,6 +1396,9 @@
     document.title = m.pageTitle || m.name;
     var md = document.querySelector('meta[name="description"]');
     if (md) md.setAttribute("content", String(m.description || "").replace(/\[PLACEHOLDER\]\s?/g, ""));
+    var ogt = document.querySelector('meta[property="og:title"]'), ogd = document.querySelector('meta[property="og:description"]');
+    if (ogt) ogt.setAttribute("content", m.pageTitle || m.name);
+    if (ogd) ogd.setAttribute("content", String(m.description || ""));
     if (m.placeholderNotice) { $("notice").textContent = m.placeholderNotice; $("notice").hidden = false; }
     $("brand").innerHTML = '<span class="brand-name">' + esc(m.host) + "</span>";
     $("brand").setAttribute("aria-label", m.host + ", " + m.name + ", back to top");

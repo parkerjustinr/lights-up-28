@@ -499,7 +499,7 @@ html:not([data-shot]) .faq-item summary:hover span:first-child { text-decoration
 .footer-small { font-size: 0.95rem; margin: 0; }
 .footer-small.mono { font-family: var(--mono); font-weight: 500; }
 
-section[id] { scroll-margin-top: calc(var(--bar) + 12px); }
+section[id], [id^="speaker-"] { scroll-margin-top: calc(var(--bar) + 12px); }
 
 /* ---------- ?shot=1: a still. Same layout, end states only, nothing mid-motion. ---------- */
 html[data-shot] { scroll-behavior: auto; }
