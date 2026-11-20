@@ -6,11 +6,11 @@
     "year": "2028",
     "timezone": "America/Guayaquil",
     "tzLabel": "ECT",
-    "dateLine": "Apr 11-12, 2028 · Nave Carolina, Quito",
+    "dateLine": "Apr 11-12, 2028 · Nave Carolina, Quito, Ecuador",
     "venue": "Nave Carolina",
     "city": "Iñaquito, Quito, Ecuador",
-    "pageTitle": "Lights Up '28 - Tarnell's customer conference, Quito",
-    "description": "Lights Up '28 is Tarnell's free customer conference for operations leaders, Apr 11-12, 2028 at Nave Carolina in Quito. Six customers give the keynotes, and you call the cues.",
+    "pageTitle": "Lights Up '28 - Tarnell's customer conference, Apr 11-12, 2028 · Nave Carolina, Quito, Ecuador",
+    "description": "Lights Up '28, Tarnell's free customer conference for operations leaders: Apr 11-12, 2028 · Nave Carolina, Quito, Ecuador. Six customers give the keynotes, and you call the cues.",
     "icsStamp": "20280101T000000Z",
     "footerLine": "Fictional event. Tarnell, Nave Carolina, and every person and company here are invented."
   },
@@ -19,6 +19,12 @@
       "id": "about",
       "label": "About",
       "on": true
+    },
+    {
+      "id": "equator",
+      "label": "Equator",
+      "on": true,
+      "nav": false
     },
     {
       "id": "speakers",
@@ -44,6 +50,12 @@
       "id": "venue",
       "label": "Getting there",
       "on": true
+    },
+    {
+      "id": "phrases",
+      "label": "Spanish",
+      "on": false,
+      "nav": false
     },
     {
       "id": "register",
@@ -84,8 +96,15 @@
   "about": {
     "heading": "Six keynotes. Six customers. You call the cues.",
     "paragraphs": [
-      "Lights Up '28 is Tarnell's customer conference, free for Tarnell customers. Nobody from Tarnell gives a main-stage keynote: the six people on the wall run buses, hospitals, arenas, lifts, breweries and ferries, and they show how they actually do it. Around them, breakouts in The Booth and hands-on labs in the Lab."
+      "Lights Up '28 is Tarnell's free customer conference, and every main-stage keynote is given by a customer who runs something live."
     ]
+  },
+  "equator": {
+    "heading": "0° 11′ S",
+    "headingLabel": "0 degrees 11 minutes south",
+    "lineLabel": "0° Equator",
+    "dotLabel": "Nave Carolina",
+    "sentence": "Nave Carolina sits next to La Carolina station, about 21 km south of the equator and 2,850 m up."
   },
   "tracks": [
     {
@@ -182,7 +201,7 @@
   },
   "schedule": {
     "heading": "Agenda",
-    "note": "Keynotes are 40 minutes on the Main Stage. Doors open at 8:00 AM both days.",
+    "note": "Labs are led by Tarnell engineers. Bring a laptop.",
     "days": [
       {
         "id": "d1",
@@ -198,7 +217,7 @@
             "title": "Doors and coffee",
             "track": null,
             "speakers": [],
-            "detail": "Badge pickup at the front desk. Coffee in the foyer.",
+            "detail": "",
             "tiers": [
               "customer",
               "lab",
@@ -245,7 +264,7 @@
             "title": "Lab: Build a live status board for your own sites",
             "track": "lab",
             "speakers": [],
-            "detail": "Led by Tarnell engineers. Bring a laptop.",
+            "detail": "",
             "tiers": [
               "lab"
             ]
@@ -274,7 +293,7 @@
             "title": "Lunch",
             "track": null,
             "speakers": [],
-            "detail": "In the main hall. Tell us about dietary needs when you register.",
+            "detail": "",
             "tiers": [
               "customer",
               "lab",
@@ -337,7 +356,7 @@
             "title": "Lab: Set up alerts that wake the right person",
             "track": "lab",
             "speakers": [],
-            "detail": "Led by Tarnell engineers. Bring a laptop.",
+            "detail": "",
             "tiers": [
               "lab"
             ]
@@ -349,7 +368,7 @@
             "title": "Opening night at Nave Carolina",
             "track": null,
             "speakers": [],
-            "detail": "Food, drinks and the six keynote speakers in one room.",
+            "detail": "",
             "tiers": [
               "customer",
               "lab",
@@ -372,7 +391,7 @@
             "title": "Doors and coffee",
             "track": null,
             "speakers": [],
-            "detail": "Coffee in the foyer.",
+            "detail": "",
             "tiers": [
               "customer",
               "lab",
@@ -419,7 +438,7 @@
             "title": "Lab: Plan a maintenance week with work orders",
             "track": "lab",
             "speakers": [],
-            "detail": "Led by Tarnell engineers. Bring a laptop.",
+            "detail": "",
             "tiers": [
               "lab"
             ]
@@ -448,7 +467,7 @@
             "title": "Lunch",
             "track": null,
             "speakers": [],
-            "detail": "In the main hall.",
+            "detail": "",
             "tiers": [
               "customer",
               "lab",
@@ -462,7 +481,7 @@
             "title": "Lab: Turn last month's incidents into a report",
             "track": "lab",
             "speakers": [],
-            "detail": "Led by Tarnell engineers. Bring a laptop.",
+            "detail": "",
             "tiers": [
               "lab"
             ]
@@ -474,7 +493,7 @@
             "title": "Tarnell product Q&A",
             "track": "booth",
             "speakers": [],
-            "detail": "The Tarnell product team answers questions from the room.",
+            "detail": "",
             "tiers": [
               "customer",
               "lab",
@@ -505,7 +524,7 @@
             "title": "Closing",
             "track": null,
             "speakers": [],
-            "detail": "Last call on the Main Stage, then drinks in the foyer.",
+            "detail": "",
             "tiers": [
               "customer",
               "lab",
@@ -519,7 +538,7 @@
   },
   "tickets": {
     "heading": "Access",
-    "intro": "Registration is free. Pick a column to choose a type. Hover or tap a row to see what it covers.",
+    "intro": "",
     "recommended": "customer",
     "tiers": [
       {
@@ -629,25 +648,21 @@
     "feature": {
       "title": "Tarnell shuttle",
       "tag": "Recommended",
-      "body": "Free shuttle from UIO arrivals to Nave Carolina. Mon Apr 10, 10:00 AM to 10:00 PM, every 30 minutes."
+      "body": "Free from UIO arrivals to Nave Carolina on Mon Apr 10, 10:00 AM to 10:00 PM, every 30 minutes."
     },
     "mapLink": "",
     "items": [
       {
         "title": "Metro",
-        "body": "Quito Metro Line 1 runs underground from Quitumbe in the south to El Labrador in the north, 15 stations. Get off at La Carolina station, at Avenida Eloy Alfaro and Avenida de La República, at the south end of Parque La Carolina next to the financial district. Nave Carolina is a short walk from the station."
+        "body": "Take Quito Metro Line 1 (Quitumbe to El Labrador, 15 stations) to La Carolina station, at Avenida Eloy Alfaro and Avenida de La República at the south end of Parque La Carolina, a short walk from Nave Carolina."
       },
       {
         "title": "Paying for the Metro",
-        "body": "Tarjeta Ciudad card, or cash at the turnstile."
+        "body": "Use a Tarjeta Ciudad card, or pay cash at the turnstile."
       },
       {
         "title": "From the airport",
-        "body": "Mariscal Sucre International (UIO) is in Tababela. The Metro doesn't reach the airport. Public buses run from the airport to the Río Coca and Carcelén terminals in the north and Quitumbe in the south, and taxis wait outside arrivals."
-      },
-      {
-        "title": "Altitude",
-        "body": "Quito sits at about 2,850 m (9,350 ft). Plan an easy first day and drink water."
+        "body": "The Metro doesn't reach Mariscal Sucre International (UIO) in Tababela, but public buses run from the airport to the Río Coca and Carcelén terminals in the north and Quitumbe in the south, and taxis wait outside arrivals."
       }
     ]
   },
@@ -677,35 +692,31 @@
     "items": [
       {
         "q": "Where do I pick up my badge?",
-        "a": "At the front desk in the Nave Carolina foyer from 8:00 AM both days. Bring a photo ID."
+        "a": "At the front desk in the Nave Carolina foyer from 8:00 AM both days, with a photo ID."
       },
       {
         "q": "Will the keynotes be recorded?",
-        "a": "Yes. All six keynotes and every breakout are recorded and sent to your work email the week after. Labs are not recorded."
+        "a": "Yes, every keynote and breakout is sent to your work email the week after."
       },
       {
         "q": "Can you handle my dietary needs?",
-        "a": "Yes. Add them when you register and the kitchen will plan for them. Vegetarian and vegan options are at every meal."
+        "a": "Yes, add them when you register and the kitchen will plan for them."
       },
       {
         "q": "Can a colleague go in my place?",
-        "a": "Yes. Reply to your confirmation email with their name and work email before Apr 4 and we will move the registration."
+        "a": "Yes, reply to your confirmation email with their name and work email before Apr 4."
       },
       {
         "q": "Is the hall step-free?",
-        "a": "Yes. Nave Carolina is on one level with a step-free entrance, and the Main Stage has wheelchair spaces in the front row."
+        "a": "Yes, Nave Carolina is on one level with a step-free entrance and wheelchair spaces at the Main Stage."
       },
       {
         "q": "How do I deal with the altitude?",
-        "a": "Quito sits at about 2,850 m. Plan an easy first day, drink water, and go light on alcohol at opening night."
-      },
-      {
-        "q": "Is there wifi?",
-        "a": "Yes, across the whole hall. The network name and password are printed on your badge."
-      },
-      {
-        "q": "How do I cancel?",
-        "a": "Reply to your confirmation email any time before the event. If you had a lab seat, it goes to the next person in line."
+        "a": "Plan an easy first day and drink water, since the hall sits 2,850 m up, as",
+        "link": {
+          "href": "#equator",
+          "label": "the equator block shows"
+        }
       }
     ]
   }

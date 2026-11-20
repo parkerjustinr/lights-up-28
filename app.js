@@ -72,7 +72,10 @@
   }
   function sessionTimes(day, s) {
     var a = zoned(day.date, s.start), b = zoned(day.date, s.end);
-    return { start: a, end: b, label: fmtTime(a) + " - " + fmtTime(b) + " " + tzShort(viewTz(), a) };
+    // "9:00 - 9:40 AM ECT" when both ends share AM/PM, so every agenda row fits on one line.
+    var fa = fmtTime(a), fb = fmtTime(b), ma = fa.slice(-2), mb = fb.slice(-2);
+    var label = (ma === mb ? fa.slice(0, -3) : fa) + " - " + fb + " " + tzShort(viewTz(), a);
+    return { start: a, end: b, label: label };
   }
 
   // ---------- calendar (.ics) ----------
@@ -171,7 +174,6 @@
           '<ol class="cue-strip" aria-label="Cues">' + strip + "</ol>" +
           '<button type="button" class="go-btn" id="go-btn"><span class="go-ring" aria-hidden="true"></span><span class="go-text">' + esc(w.goText) + "</span></button>" +
           '<p class="wall-caption">' + esc(w.caption) + "</p>" +
-          '<button type="button" class="stage-save" id="wall-save">' + esc(w.saveLabel) + "</button>" +
         "</div>" +
         '<p class="sr" aria-live="polite" id="wall-live"></p>' +
       "</div>";
@@ -254,11 +256,6 @@
     Array.prototype.forEach.call(wall.querySelectorAll(".cue-btn"), function (b) {
       b.addEventListener("click", function () { cutTo(+b.getAttribute("data-cue"), true); });
     });
-    $("wall-save").addEventListener("click", function () {
-      var c = CUES[state.cue];
-      saveCard({ label: D.wall.label, name: c.sp.name, title: c.s.title, cue: cueLine(c), photo: c.sp.photo, numeral: c.cue },
-        D.meta.shortName + "-" + c.cue.toLowerCase() + ".png");
-    });
   }
 
   // ---------- sections ----------
@@ -268,6 +265,16 @@
     var a = D.about;
     return sectionShell("about", a.heading,
       '<div class="about-copy">' + a.paragraphs.map(function (p) { return "<p>" + copy(p) + "</p>"; }).join("") + "</div>");
+  };
+
+  // Equator block: one huge latitude, a line for the equator, a dot for the hall, one sentence.
+  R.equator = function () {
+    var e = D.equator;
+    return '<section class="section sec-equator" id="equator" aria-labelledby="equator-title"><div class="wrap">' +
+      '<h2 class="eq-lat" id="equator-title" aria-label="' + esc(e.headingLabel) + '">' + esc(e.heading) + "</h2>" +
+      '<div class="eq-map" aria-hidden="true"><p class="eq-line"><span>' + esc(e.lineLabel) + '</span></p>' +
+      '<p class="eq-dot"><span class="dot"></span>' + esc(e.dotLabel) + "</p></div>" +
+      '<p class="eq-text">' + copy(e.sentence) + "</p></div></section>";
   };
 
   R.speakers = function () {
@@ -330,14 +337,14 @@
             if (!p) return "";
             return '<a class="s-sp" href="#speaker-' + id + '">' +
               (p.photo ? '<img src="' + esc(img(p.photo, 64, 64, 2)) + '" alt="" width="32" height="32" loading="' + imgLoading(false) + '">' : "") +
-              '<span><span class="s-sp-name">' + esc(p.name) + '</span><span class="s-sp-role">' + esc(p.role) + ", " + esc(p.company) + "</span></span></a>";
+              '<span class="s-sp-name">' + esc(p.name) + "</span></a>";
           }).filter(Boolean).join("");
           var cls = "session track-" + trackIndex(x.track) + (x.cue ? " is-keynote" : "") + (tr ? "" : " is-common");
           return '<li class="' + cls + '" id="session-' + x.id + '">' +
             '<span class="s-time"><time datetime="' + t.start.toISOString() + '">' + esc(t.label) + "</time>" +
               (x.cue ? '<span class="s-cue">' + esc(x.cue) + "</span>" : "") + "</span>" +
             '<div class="s-body"><h3 class="s-title">' + esc(x.title) + "</h3>" +
-              (spk ? '<div class="s-speakers">' + spk + "</div>" : "") +
+              '<div class="s-speakers">' + spk + "</div>" +
               (x.detail ? '<p class="s-detail">' + copy(x.detail) + "</p>" : "") + "</div>" +
             (tr ? '<span class="s-track">' + esc(tr.name) + "</span>" : "") +
           "</li>";
@@ -460,7 +467,7 @@
     var f = D.faq;
     return '<section class="section sec-faq" id="faq" aria-labelledby="faq-title"><div class="wrap faq-layout">' +
       '<h2 class="section-title" id="faq-title">' + copy(f.heading) + '</h2><div class="faq-list">' + f.items.map(function (x) {
-      return '<details class="faq-item"><summary><span>' + copy(x.q) + '</span><span class="q-icon" aria-hidden="true">+</span></summary><div class="a"><p>' + copy(x.a) + "</p></div></details>";
+      return '<details class="faq-item"><summary><span>' + copy(x.q) + '</span><span class="q-icon" aria-hidden="true">+</span></summary><div class="a"><p>' + copy(x.a) + (x.link ? ' <a href="' + esc(x.link.href) + '">' + esc(x.link.label) + "</a>." : "") + "</p></div></details>";
     }).join("") + "</div></div></section>";
   };
 
@@ -675,14 +682,15 @@
     if (m.placeholderNotice) { $("notice").textContent = m.placeholderNotice; $("notice").hidden = false; }
     $("brand").innerHTML = '<span class="brand-name">' + esc(m.host) + "</span>";
     $("brand").setAttribute("aria-label", m.host + ", " + m.name + ", back to top");
-    $("nav").innerHTML = on.filter(function (s) { return s.id !== "register"; }).map(function (s) {
+    var navOn = on.filter(function (s) { return s.nav !== false; });
+    $("nav").innerHTML = navOn.filter(function (s) { return s.id !== "register"; }).map(function (s) {
       return '<li><a href="#' + s.id + '">' + esc(s.label) + "</a></li>";
     }).join("");
     $("header-cta").setAttribute("href", D.header.cta.href);
     $("header-cta").textContent = D.header.cta.label;
     $("sections").innerHTML = on.map(function (s) { return R[s.id](); }).join("");
     $("footer").innerHTML = '<div class="wrap footer-inner"><p class="footer-word">' + esc(m.host) + "</p>" +
-      '<nav aria-label="Footer"><ul class="footer-links">' + on.map(function (s) { return '<li><a href="#' + s.id + '">' + esc(s.label) + "</a></li>"; }).join("") + "</ul></nav>" +
+      '<nav aria-label="Footer"><ul class="footer-links">' + navOn.map(function (s) { return '<li><a href="#' + s.id + '">' + esc(s.label) + "</a></li>"; }).join("") + "</ul></nav>" +
       '<p class="footer-small mono">' + esc(m.name) + " · " + esc(m.dateLine) + "</p>" +
       '<p class="footer-small">' + esc(m.footerLine || "") + "</p></div>";
   }
