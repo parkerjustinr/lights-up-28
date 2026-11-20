@@ -273,23 +273,33 @@
   R.speakers = function () {
     var sp = D.speakers, map = speakerSessions();
     function first(id) { return (map[id] || [])[0]; }
-    function card(p, cls, w, h) {
+    // Photos get alt="": the name is the heading right next to them.
+    function photo(p, w, h) {
+      return '<div class="sp-photo duo">' + (p.photo
+        ? '<img src="' + esc(img(p.photo, w, h)) + '" alt="" width="' + w + '" height="' + h + '" loading="' + imgLoading(false) + '">'
+        : '<span class="sp-initials" aria-hidden="true">' + esc(initials(p.name)) + "</span>") + "</div>";
+    }
+    function link(p) {
       var f = first(p.id);
-      return '<li class="sp-card ' + cls + '" id="speaker-' + p.id + '">' +
-        (f && f.s.cue ? '<p class="sp-cue">' + esc(f.s.cue) + "</p>" : "") +
-        '<div class="sp-photo duo">' + (p.photo
-          ? '<img src="' + esc(img(p.photo, w, h)) + '" alt="' + esc(p.name) + '" width="' + w + '" height="' + h + '" loading="' + imgLoading(false) + '">'
-          : '<span class="sp-initials" aria-hidden="true">' + esc(initials(p.name)) + "</span>") + "</div>" +
-        '<h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + '</p><p class="sp-company">' + esc(p.company) + "</p>" +
-        (f ? '<a class="sp-agenda" href="#session-' + esc(f.s.id) + '">' + esc(sp.agendaLink) + "</a>" : "") + "</li>";
+      return f ? '<a class="sp-agenda" href="#session-' + esc(f.s.id) + '" aria-label="' + esc(sp.agendaLink + ": " + p.name) + '">' + esc(sp.agendaLink) + "</a>" : "";
+    }
+    function card(p) {
+      var f = first(p.id);
+      return '<li class="sp-card" id="speaker-' + p.id + '">' +
+        (f && f.s.cue ? '<p class="sp-cue">' + esc(f.s.cue) + "</p>" : "") + photo(p, 480, 600) +
+        '<h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + '</p><p class="sp-company">' + esc(p.company) + "</p>" + link(p) + "</li>";
+    }
+    function row(p) {
+      return '<li class="sp-row" id="speaker-' + p.id + '">' + photo(p, 160, 160) +
+        '<div class="sp-row-text"><h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + ' <span class="sp-company">' + esc(p.company) + "</span></p></div>" + link(p) + "</li>";
     }
     var keynote = sp.items.filter(function (p) { var f = first(p.id); return f && f.s.cue; });
     keynote.sort(function (a, b) { return parseInt(first(a.id).s.cue.slice(1), 10) - parseInt(first(b.id).s.cue.slice(1), 10); });
     var others = sp.items.filter(function (p) { return keynote.indexOf(p) < 0; });
     return sectionShell("speakers", sp.heading,
       (sp.intro ? '<p class="lede">' + copy(sp.intro) + "</p>" : "") +
-      '<h3 class="sp-group">' + esc(sp.keynoteHeading) + '</h3><ul class="sp-grid sp-keynotes">' + keynote.map(function (p) { return card(p, "is-keynote", 480, 600); }).join("") + "</ul>" +
-      '<h3 class="sp-group">' + esc(sp.boothHeading) + '</h3><ul class="sp-grid sp-booth">' + others.map(function (p) { return card(p, "is-booth", 360, 360); }).join("") + "</ul>");
+      '<h3 class="sp-group">' + esc(sp.keynoteHeading) + '</h3><ul class="sp-grid sp-keynotes">' + keynote.map(card).join("") + "</ul>" +
+      '<h3 class="sp-group">' + esc(sp.boothHeading) + '</h3><ul class="sp-booth">' + others.map(row).join("") + "</ul>");
   };
 
   R.schedule = function () {
@@ -335,7 +345,8 @@
         '<button type="button" class="btn btn-small ics-btn" data-ics-day="' + day.id + '">Add ' + esc(day.title) + " to calendar</button>" +
       "</div>";
     }).join("");
-    return sectionShell("schedule", s.heading, (s.note ? '<p class="note">' + copy(s.note) + "</p>" : "") + tzBar + legend + tabs + panels);
+    var strip = '<div class="ag-strip">' + tzBar + legend + (s.note ? '<p class="note">' + copy(s.note) + "</p>" : "") + "</div>";
+    return sectionShell("schedule", s.heading, strip + tabs + panels);
   };
 
   function rowPreviewItems(row) {
@@ -409,7 +420,7 @@
     return sectionShell("venue", v.heading,
       (v.intro ? '<p class="lede">' + copy(v.intro) + "</p>" : "") +
       '<div class="venue-layout">' +
-      (f ? '<div class="venue-feature">' + (f.tag ? '<p class="venue-tag">' + esc(f.tag) + "</p>" : "") + "<h3>" + esc(f.title) + "</h3><p>" + copy(f.body) + "</p></div>" : "") +
+      (f ? '<div class="venue-feature">' + '<h3>' + esc(f.title) + (f.tag ? ' <span class="venue-tag">' + esc(f.tag) + "</span>" : "") + "</h3><p>" + copy(f.body) + "</p></div>" : "") +
       '<dl class="ruled">' + v.items.map(function (x) { return "<div><dt>" + esc(x.title) + "</dt><dd>" + copy(x.body) + "</dd></div>"; }).join("") + "</dl></div>" +
       (v.mapLink ? '<a class="btn btn-small" href="' + esc(v.mapLink) + '">Open in maps</a>' : ""));
   };

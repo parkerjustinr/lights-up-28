@@ -214,24 +214,35 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
 .sp-card { display: flex; flex-direction: column; }
 .sp-cue { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0 0 6px; color: var(--host); }
 .sp-photo { width: 100%; aspect-ratio: 4 / 5; }
-.is-booth .sp-photo { aspect-ratio: 1; background: var(--booth); }
+.sp-booth { border-bottom: 1px solid var(--ink); }
+.sp-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--ink); }
+.sp-row .sp-photo { width: 64px; aspect-ratio: 1; background: var(--booth); grid-row: span 2; }
+.sp-row .sp-name { margin: 0 0 2px; font-size: 1.2rem; }
+.sp-row .sp-role { font-weight: 700; }
+.sp-row .sp-company { display: inline; margin: 0 0 0 6px; font-weight: 400; }
+.sp-row .sp-agenda { margin: 0; justify-self: start; }
+@media (min-width: 760px) {
+  .sp-row { grid-template-columns: 80px minmax(0, 1fr) auto; gap: 20px; }
+  .sp-row .sp-photo { width: 80px; grid-row: auto; }
+}
 .sp-initials { display: grid; place-items: center; height: 100%; font-family: var(--display); font-weight: 800; font-size: 2.5rem; color: var(--on-host); }
 .sp-name { font-size: 1.3rem; font-stretch: 105%; margin: 10px 0 4px; }
 .sp-role { font-size: 0.95rem; margin: 0; font-weight: 700; }
 .sp-company { color: var(--muted); font-size: 0.95rem; margin: 0 0 8px; }
 .sp-agenda { font-weight: 700; font-size: 0.95rem; text-underline-offset: 3px; margin-top: auto; }
-.sp-booth .sp-name { font-size: 1.15rem; }
-@media (min-width: 640px) { .sp-keynotes { grid-template-columns: repeat(3, 1fr); } .sp-booth { grid-template-columns: repeat(4, 1fr); } }
-@media (min-width: 1040px) { .sp-keynotes { grid-template-columns: repeat(6, 1fr); } .sp-booth { max-width: 66%; } }
+@media (min-width: 640px) { .sp-keynotes { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1040px) { .sp-keynotes { grid-template-columns: repeat(6, 1fr); } .sp-booth { max-width: 880px; } }
 
 /* ---------- schedule ---------- */
 .track-0 { --track: var(--paper); }
 .track-1 { --track: var(--host); }
 .track-2 { --track: var(--booth); }
 .track-3 { --track: var(--lab); }
-.tz-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 14px; }
+.ag-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; margin-bottom: 18px; padding: 10px 0; border-top: var(--rule); }
+.ag-strip .note { margin: 0; }
+.tz-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .tz-label { margin: 0; font-family: var(--mono); font-weight: 500; }
-.track-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 18px; font-size: 0.95rem; }
+.track-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 0.95rem; }
 .track-legend li { display: flex; align-items: center; gap: 8px; }
 .swatch { width: 16px; height: 16px; background: var(--track); display: inline-block; outline: 1px solid var(--ink); outline-offset: -1px; }
 .day-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; border: var(--rule); margin-bottom: 12px; }
@@ -257,7 +268,7 @@ html:not([data-shot]) .day-tab:hover:not([aria-selected="true"]) { background: v
 .s-sp-name { font-weight: 700; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; margin-right: 8px; }
 .s-sp-role { font-size: 0.9rem; }
 .s-detail { margin: 4px 0 0; }
-.s-track { justify-self: start; font-family: var(--mono); font-weight: 500; font-size: 0.8rem; padding: 2px 8px; border: 1.5px solid currentColor; }
+.s-track { justify-self: start; font-family: var(--mono); font-weight: 500; font-size: 0.85rem; }
 .session.is-common .s-title { font-size: 1.15rem; }
 .session.is-common .s-detail { color: var(--muted); }
 /* Keynotes are full blocks of host blue, so no day reads as one long run of identical rows. */
@@ -272,6 +283,12 @@ html:not([data-shot]) .day-tab:hover:not([aria-selected="true"]) { background: v
 }
 
 /* ---------- Access: the registration type matrix ---------- */
+@media (min-width: 880px) {
+  .sec-tickets .wrap { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 48px; align-items: end; }
+  .sec-tickets .wrap > * { grid-column: 1 / -1; }
+  .sec-tickets .section-title { grid-column: 1; }
+  .sec-tickets .wrap > .lede { grid-column: 2; margin-bottom: 26px; max-width: 46ch; }
+}
 .matrix-wrap { border: 0; padding: 0; margin: 0 0 20px; min-width: 0; }
 .matrix-layout { display: grid; gap: 20px; }
 .matrix { width: 100%; border-collapse: collapse; }
@@ -340,7 +357,7 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .venue-layout { display: grid; gap: 28px; }
 .venue-feature { background: var(--ink); color: var(--paper); padding: 28px 22px 32px; align-self: start; }
 .venue-feature h3 { font-size: clamp(2rem, 6vw, 3.4rem); font-stretch: 110%; margin-bottom: 14px; }
-.venue-tag { display: inline-block; font-family: var(--mono); font-weight: 500; font-size: 0.85rem; border: 1.5px solid currentColor; padding: 4px 8px; margin: 0 0 20px; }
+.venue-tag { display: inline-block; vertical-align: middle; font-family: var(--mono); font-weight: 500; font-size: 0.95rem; font-stretch: 100%; margin-left: 10px; }
 .venue-feature p { margin: 0; font-size: 1.2rem; max-width: 40ch; }
 .ruled > div { border-top: var(--rule); padding: 12px 0 16px; display: grid; gap: 4px; }
 .ruled dt { font-family: var(--mono); font-weight: 500; font-size: 0.95rem; }
@@ -357,7 +374,7 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
   .sec-register #reg-out:has(.confirm) { grid-column: 1 / -1; grid-row: auto; margin-top: 8px; }
 }
 .sec-register :focus-visible { outline-color: var(--on-host); }
-.demo { border: 1.5px dashed currentColor; padding: 8px 12px; font-size: 0.95rem; max-width: 760px; }
+.demo { font-weight: 700; font-size: 0.95rem; max-width: 760px; }
 .reg-form { display: grid; gap: 20px; max-width: 760px; background: var(--paper); color: var(--ink); padding: 24px 18px; }
 .reg-form :focus-visible { outline-color: var(--ink); }
 .field { display: grid; gap: 6px; align-content: start; }
