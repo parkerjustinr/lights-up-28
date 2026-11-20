@@ -83,7 +83,14 @@
     "agendaLink": "See in agenda",
     "saveLabel": "Save card",
     "standbyLong": "standby",
-    "called": "called"
+    "called": "called",
+    "you": {
+      "cue": "Q7",
+      "label": "YOU",
+      "cueLine": "You're on",
+      "joined": "You're in the queue as Q7.",
+      "aria": "you"
+    }
   },
   "hero": {
     "title": "Lights Up '28",
@@ -750,7 +757,9 @@
         "labelEmpty": "No photo yet",
         "labelPhoto": "Your photo, in the wall's colors",
         "labelLive": "Camera preview"
-      }
+      },
+      "join": "Join the queue",
+      "calendar": "Add to calendar"
     },
     "shotDefaults": {
       "company": "Northline Transit",

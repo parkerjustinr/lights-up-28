@@ -129,6 +129,17 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
    with headroom above the hair and the chin fully in, at any frame shape. These are the no-JS defaults. */
 .stage-photo img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 50%; filter: grayscale(1) contrast(1.1) brightness(1.06); mix-blend-mode: multiply; }
 .stage-photo::after { content: ""; position: absolute; inset: 0; background: var(--ink); mix-blend-mode: screen; pointer-events: none; }
+/* Q7 · YOU on the wall: the registrant's duotone photo, or the empty figure on a floor line. */
+.stage-photo .wall-you { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: 50% 30%; }
+.wall-empty { position: absolute; inset: 0; }
+.wall-empty::before { content: ""; position: absolute; left: 16%; right: 16%; bottom: 14%; height: 2px; background: var(--ink); }
+.stage-photo .wall-empty .qf { position: absolute; left: 50%; bottom: calc(14% + 2px); height: 56%; width: auto; aspect-ratio: 28 / 60; transform: translateX(-50%); }
+/* The visitor's queue figure: a 2px paper outline, their photo as the head. */
+.qf.is-you .you-ring { fill: var(--ink); stroke: var(--paper); stroke-width: 4px; paint-order: stroke; vector-effect: non-scaling-stroke; }
+.cue-strip.has-you { gap: 3px; }
+.cue-strip.has-you .cue-state { gap: 2px; letter-spacing: -0.02em; }
+.cue-strip.has-you .lamp { width: 5px; height: 5px; }
+.cue-you { font-family: var(--mono); font-weight: 500; font-size: clamp(8px, 2.4vw, 10px); line-height: 1; }
 /* Screen turning on: a 2px paper line across the middle, then the photo opens from it (photoReveal in app.js). */
 .scanline { position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--paper); z-index: 4; }
 /* The queue lane: reserved space at the foot of the wall, so figures never touch text. */
@@ -187,6 +198,7 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
   .cue-strip { flex: 0 0 auto; gap: 6px; }
   .cue-strip li { flex: 0 0 auto; }
   .cue-btn { width: 64px; height: 50px; font-size: 1.1rem; }
+  .cue-strip.has-you .cue-btn { width: clamp(46px, 4.2vw, 64px); }
   .cue-state { font-size: 10px; }
   .go-btn { width: 64px; height: 64px; font-size: 1.2rem; }
   .wall-caption { font-size: 1rem; }
@@ -456,6 +468,11 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .wu-empty .qf { position: absolute; left: 50%; bottom: calc(30% + 2px); height: 42%; width: auto; aspect-ratio: 28 / 60; transform: translateX(-50%); }
 .wu-empty-line { position: absolute; left: 10px; right: 10px; bottom: 10px; margin: 0; font-family: var(--mono); font-weight: 500; font-size: clamp(0.72rem, 1.4vw, 0.95rem); line-height: 1.25; text-align: left; }
 .wu-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.wu-join { margin-top: 18px; min-height: 54px; padding: 12px 26px; font-size: 1.15rem; background: var(--host); border-color: var(--host); color: var(--ink); }
+html:not([data-shot]) .sec-register .wu-join:hover { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+.wu-links { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 16px 0 0; }
+.linkish { appearance: none; background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+html:not([data-shot]) .linkish:hover { text-decoration-thickness: 3px; }
 .wu-status:empty { display: none; }
 .wu-status { margin: 10px 0 0; font-weight: 700; }
 .wu-privacy { margin: 10px 0 0; font-size: 0.95rem; }

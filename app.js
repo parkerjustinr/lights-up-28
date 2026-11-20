@@ -147,6 +147,7 @@
     CUES.sort(function (a, b) { return parseInt(a.cue.slice(1), 10) - parseInt(b.cue.slice(1), 10); });
   }
   function cueLine(c) {
+    if (c.visitor) return c.cue + " · " + D.wall.you.cueLine + " · " + D.tracks[0].name;
     var t = zoned(c.day.date, c.s.start), tr = byId(D.tracks, c.s.track);
     return c.cue + " · " + c.day.short + " " + fmtTime(t, D.meta.timezone) + " " + D.meta.tzLabel + (tr ? " · " + tr.name : "");
   }
@@ -348,6 +349,65 @@
     });
   }
 
+  // ---------- Q7 · YOU: the registrant joins the back of the queue (memory only) ----------
+  var VIS = { joined: false, name: "", title: "", photo: "" };
+  function visitorCue() {
+    return { cue: D.wall.you.cue, visitor: true, sp: { name: VIS.name }, s: { title: VIS.title, id: null, track: D.tracks[0].id }, day: null };
+  }
+  // The visitor's figure: same body as the others, a 2px paper outline, their photo as the head if they added one.
+  function youFigure() {
+    var head = VIS.photo
+      ? '<defs><clipPath id="you-head"><circle cx="12" cy="6" r="5"/></clipPath></defs><circle class="you-ring" cx="12" cy="6" r="5"/>' +
+        '<image href="' + VIS.photo + '" x="7" y="0" width="10" height="12.5" preserveAspectRatio="xMidYMid slice" clip-path="url(#you-head)"/>'
+      : '<circle class="you-ring" cx="12" cy="6" r="5"/>';
+    return '<svg class="qf is-you" data-k="6" viewBox="0 0 28 60" style="--h:58px" focusable="false">' + head +
+      '<path class="you-ring" d="M6 13h12l2 22h-3.2L15.4 60h-3L12 39l-.4 21h-3L7.2 35H4z"/></svg>';
+  }
+  function youShot() {
+    return VIS.photo
+      ? '<img class="wall-you" alt="" src="' + VIS.photo + '" data-cue="6">'
+      : '<div class="wall-empty" data-cue="6">' + queueFigure(0) + "</div>";
+  }
+  function refreshVisitor() {
+    var k = CUES.length - 1;
+    CUES[k] = visitorCue();
+    var old = document.querySelector('#wall .stage-photo [data-cue="6"]');
+    if (old) { old.insertAdjacentHTML("afterend", youShot()); old.remove(); }
+    var f = figK(6);
+    if (f) { var x = f._x, vis = f.style.visibility; f.insertAdjacentHTML("afterend", youFigure()); f.remove(); f = figK(6); setX(f, x); f.style.visibility = vis; }
+    cutTo(state.cue, false);
+  }
+  function joinQueue(rec, opts) {
+    opts = opts || {};
+    VIS.name = rec.name; VIS.title = regLine(rec);
+    VIS.photo = WU.canvas ? WU.canvas.toDataURL("image/jpeg", 0.85) : "";
+    if (VIS.joined) { refreshVisitor(); }
+    else {
+      VIS.joined = true;
+      CUES.push(visitorCue());
+      var y = D.wall.you;
+      $("wall").querySelector(".cue-strip").insertAdjacentHTML("beforeend",
+        '<li><button type="button" class="cue-btn is-you" data-cue="6"><span class="cue-q">' + esc(y.cue) + '</span><span class="cue-you" aria-hidden="true">' + esc(y.label) + '</span><span class="cue-state" aria-hidden="true"></span></button></li>');
+      $("wall").querySelector(".cue-strip").classList.add("has-you");
+      var b = $("wall").querySelector('.cue-btn[data-cue="6"]');
+      b.addEventListener("click", function () { jumpTo(6); });
+      $("wall").querySelector(".scanline").insertAdjacentHTML("beforebegin", youShot());
+      $("wall").querySelector(".stage-photo [data-cue='6']").hidden = state.cue !== 6;
+      $("queue").insertAdjacentHTML("beforeend", youFigure());
+      cutTo(state.cue, false);
+      var f = figK(6), g = qGeom();
+      f.style.visibility = "visible";
+      if (SHOT || opts.silent || Qs.busy) placeQueue(state.cue);
+      else move(f, g.enter, slotX(g, 6 - state.cue - 1), 4, 900, smoothOK() ? 500 : 0);
+    }
+    if (!opts.silent) {
+      var live = $("wall-live");
+      live.textContent = "";
+      setTimeout(function () { live.textContent = D.wall.you.joined; }, 30);
+      window.scrollTo({ top: 0, behavior: smoothOK() ? "smooth" : "instant" });
+    }
+  }
+
   // Hard cut: everything swaps in the same frame. No fade, no slide.
   function cutTo(i, announce) {
     var n = CUES.length;
@@ -358,8 +418,9 @@
     $("wall-numeral").textContent = c.cue;
     $("wall-title").textContent = c.s.title;
     $("wall-cue").textContent = cueLine(c);
-    $("wall-link").setAttribute("href", "#session-" + c.s.id);
-    Array.prototype.forEach.call(document.querySelectorAll("#wall .stage-photo img"), function (im) {
+    $("wall-link").hidden = !!c.visitor;
+    if (!c.visitor) $("wall-link").setAttribute("href", "#session-" + c.s.id);
+    Array.prototype.forEach.call(document.querySelectorAll("#wall .stage-photo [data-cue]"), function (im) {
       im.hidden = +im.getAttribute("data-cue") !== i;
     });
     Array.prototype.forEach.call(document.querySelectorAll("#wall .cue-btn"), function (b) {
@@ -370,7 +431,7 @@
       b.classList.toggle("is-called", called);
       if (live) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current");
       b.querySelector(".cue-state").innerHTML = sb ? '<span class="lamp"></span>' + esc(D.wall.standby) : "";
-      b.setAttribute("aria-label", x.cue + ", " + x.sp.name + (live ? ", " + D.wall.live : sb ? ", " + D.wall.standbyLong : called ? ", " + D.wall.called : ""));
+      b.setAttribute("aria-label", x.cue + ", " + x.sp.name + (x.visitor ? ", " + D.wall.you.aria : "") + (live ? ", " + D.wall.live : sb ? ", " + D.wall.standbyLong : called ? ", " + D.wall.called : ""));
     });
     $("go-btn").setAttribute("aria-label", D.wall.goText + ": call " + next.cue + ", " + next.sp.name);
     fitNames();
@@ -387,6 +448,7 @@
   function fitName(el) {
     if (!el) return;
     var w = WDTH_MAX;
+    el.style.fontSize = "";
     el.style.fontStretch = w + "%";
     var box = el.clientWidth;
     function over() {
@@ -395,6 +457,9 @@
       return wide;
     }
     while (over() && w > WDTH_MIN) { w -= 5; el.style.fontStretch = w + "%"; }
+    // Only a long registrant name gets here: reduce the size as a last resort.
+    var size = parseFloat(getComputedStyle(el).fontSize);
+    while (over() && size > 32) { size -= 4; el.style.fontSize = size + "px"; }
   }
   function fitNames() { Array.prototype.forEach.call(document.querySelectorAll(".stage-name"), fitName); }
 
@@ -907,11 +972,11 @@
         "</div>" +
         '<p class="wu-status" id="wu-status" role="status"></p>' +
         '<p class="wu-privacy">' + esc(c.photo.privacy) + "</p>" +
+        '<button type="button" class="btn wu-join" id="wu-join">' + esc(c.join) + ' <span class="arrow" aria-hidden="true">&rarr;</span></button>' +
+        '<p class="wu-links"><button type="button" class="linkish" id="card-save">' + esc(c.saveLabel) + "</button>" +
+          '<button type="button" class="linkish" id="cal-all">' + esc(c.calendar) + "</button>" +
+          '<button type="button" class="linkish" id="reg-again">' + esc(c.againLabel) + "</button></p>" +
         '<p class="confirm-demo">' + esc(c.demoLine) + "</p>" +
-        '<div class="confirm-actions"><button type="button" class="btn btn-small" id="card-save">' + esc(c.saveLabel) + "</button>" +
-        days.map(function (d) {
-          return '<button type="button" class="btn btn-small" data-ics-day="' + d.id + '" data-ics-tier="' + rec.tier.id + '">Add ' + esc(d.title) + " to calendar</button>";
-        }).join("") + '<button type="button" class="btn btn-small" id="reg-again">' + esc(c.againLabel) + "</button></div>" +
       "</div>";
     fitNames();
     if (focus) {
@@ -924,6 +989,13 @@
       saveCard({ label: c.label, name: rec.name, title: regLine(rec), cue: D.meta.dateLine, canvas: WU.canvas }, D.meta.shortName + "-walk-up.png");
     });
     wireWalkupPhoto();
+    $("wu-join").addEventListener("click", function () { joinQueue(rec); });
+    $("cal-all").addEventListener("click", function () {
+      var all = days.map(function (day) {
+        return { id: day.id, date: day.date, label: day.label, sessions: day.sessions.filter(function (s) { return !s.tiers || s.tiers.indexOf(rec.tier.id) > -1; }) };
+      });
+      downloadIcs(all, (D.meta.shortName || "event") + ".ics");
+    });
     $("reg-again").addEventListener("click", function () {
       stopCamera();
       WU.canvas = null;
@@ -970,6 +1042,7 @@
   function showPhoto(cv) {
     var slot = $("wu-slot"), p = D.registration.card.photo;
     WU.canvas = cv;
+    if (VIS.joined) { VIS.photo = cv.toDataURL("image/jpeg", 0.85); refreshVisitor(); }
     cv.className = "wu-canvas";
     slot.innerHTML = "";
     slot.appendChild(cv);
@@ -1256,14 +1329,18 @@
     .then(function (data) {
       D = data;
       buildCues();
-      if (SHOT) {
-        var q = parseInt(Q.get("q"), 10);
-        state.cue = q >= 1 && q <= CUES.length ? q - 1 : 0;
-      }
+      var shotQ = SHOT ? parseInt(Q.get("q"), 10) : 0;
+      if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
       renderChrome();
       wireWall(); wireTabs(); wireMatrix(); wireForm(); wireGlobal(); wirePhrases();
       applyNameParam();
+      // ?shot=1&q=7&n=Name: the registrant is already on the wall as Q7, empty photo state.
+      if (SHOT && shotQ === 7 && NAME_PARAM) {
+        var sd = D.registration.shotDefaults;
+        joinQueue({ name: NAME_PARAM, company: sd.company, tier: byId(D.tickets.tiers, sd.tier), size: "" }, { silent: true });
+        cutTo(6, false); placeQueue(6);
+      }
       fitNames();
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNames);
       window.addEventListener("resize", fitNames);
