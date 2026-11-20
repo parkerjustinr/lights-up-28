@@ -54,7 +54,7 @@
     {
       "id": "phrases",
       "label": "Spanish",
-      "on": false,
+      "on": true,
       "nav": false
     },
     {
@@ -664,6 +664,67 @@
         "title": "From the airport",
         "body": "The Metro doesn't reach Mariscal Sucre International (UIO) in Tababela, but public buses run from the airport to the Río Coca and Carcelén terminals in the north and Quitumbe in the south, and taxis wait outside arrivals."
       }
+    ]
+  },
+  "phrases": {
+    "heading": "Say it in Quito",
+    "items": [
+      {
+        "es": "Buenos días.",
+        "en": "Good morning.",
+        "say": "BWEH-nohs DEE-ahs"
+      },
+      {
+        "es": "¿Dónde está el Metro?",
+        "en": "Where's the Metro?",
+        "say": "DOHN-deh ehs-TAH ehl MEH-troh"
+      },
+      {
+        "es": "Un café, por favor.",
+        "en": "A coffee, please.",
+        "say": "oon kah-FEH, pohr fah-VOHR"
+      },
+      {
+        "es": "¿Cuánto cuesta?",
+        "en": "How much is it?",
+        "say": "KWAHN-toh KWEHS-tah"
+      },
+      {
+        "es": "La cuenta, por favor.",
+        "en": "The check, please.",
+        "say": "lah KWEHN-tah, pohr fah-VOHR"
+      },
+      {
+        "es": "¡Achachay!",
+        "en": "Brr, it's cold! A Kichwa word you'll hear all over Quito.",
+        "say": "ah-chah-CHAI",
+        "accept": [
+          "chach",
+          "achach"
+        ]
+      }
+    ],
+    "prev": "Previous",
+    "next": "Next",
+    "listen": "Listen",
+    "try": "Try it",
+    "record": "Record and compare",
+    "listening": "Listening. Say the phrase now.",
+    "recording": "Recording for 4 seconds. Say the phrase now.",
+    "playing": "Playing your clip, then the voice.",
+    "heard": "Heard:",
+    "nailed": "Nailed it.",
+    "close": "Close. Watch:",
+    "again": "Try again, a bit slower.",
+    "noMic": "The microphone isn't available here, so this part can't run.",
+    "noSpeech": "Nothing was heard. Try again a little closer to the microphone.",
+    "privacy": "Your browser does the listening. Nothing is saved on this site.",
+    "voiceLangs": [
+      "es-EC",
+      "es-419",
+      "es-US",
+      "es-MX",
+      "es-ES"
     ]
   },
   "registration": {

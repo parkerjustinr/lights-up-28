@@ -563,6 +563,146 @@
       (v.mapLink ? '<a class="btn btn-small" href="' + esc(v.mapLink) + '">Open in maps</a>' : ""));
   };
 
+  // ---------- Say it in Quito: one phrase card at a time ----------
+  R.phrases = function () {
+    var ph = D.phrases;
+    return sectionShell("phrases", ph.heading,
+      '<div class="ph-card" id="ph-card">' +
+        '<div class="ph-top"><p class="ph-count" id="ph-count"></p>' +
+          '<div class="ph-nav"><button type="button" class="btn btn-small" id="ph-prev">' + esc(ph.prev) + '</button>' +
+          '<button type="button" class="btn btn-small" id="ph-next">' + esc(ph.next) + "</button></div></div>" +
+        '<div class="ph-body" id="ph-body" aria-live="polite"></div>' +
+        '<div class="ph-actions"><button type="button" class="btn btn-primary btn-small" id="ph-listen" hidden>' + esc(ph.listen) + "</button>" +
+          '<button type="button" class="btn btn-small" id="ph-try">' + esc(ph.try) + "</button></div>" +
+        '<div class="ph-result" id="ph-result" aria-live="polite"></div>' +
+      "</div>" +
+      '<p class="ph-privacy">' + esc(ph.privacy) + "</p>");
+  };
+  var PH = { i: 0, voice: null, busy: false, rec: null, stream: null, timer: null };
+  function phNorm(t) {
+    return String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function phWords(t) { return phNorm(t).split(" ").filter(Boolean); }
+  // Respelling chunks line up one-to-one with the phrase's words.
+  function phSay(item) { return item.say.replace(/,/g, "").split(/\s+/); }
+  function phRender() {
+    var ph = D.phrases, item = ph.items[PH.i];
+    $("ph-count").textContent = (PH.i + 1) + " / " + ph.items.length;
+    $("ph-body").innerHTML = '<p class="ph-es" lang="es">' + esc(item.es) + '</p><p class="ph-en">' + esc(item.en) + '</p><p class="ph-say">' + esc(item.say) + "</p>";
+    $("ph-result").innerHTML = "";
+  }
+  function phPickVoice() {
+    if (!("speechSynthesis" in window)) return null;
+    var vs = window.speechSynthesis.getVoices() || [], order = D.phrases.voiceLangs;
+    function lang(v) { return String(v.lang || "").replace("_", "-").toLowerCase(); }
+    for (var k = 0; k < order.length; k++) {
+      var want = order[k].toLowerCase();
+      for (var j = 0; j < vs.length; j++) if (lang(vs[j]) === want) return vs[j];
+    }
+    for (var m = 0; m < vs.length; m++) if (lang(vs[m]).indexOf("es") === 0) return vs[m];
+    return null;
+  }
+  function phUpdateVoice() {
+    PH.voice = phPickVoice();
+    if ($("ph-listen")) $("ph-listen").hidden = !PH.voice;
+  }
+  function phSpeak(text, done) {
+    if (!PH.voice) { if (done) done(); return; }
+    var u = new SpeechSynthesisUtterance(text);
+    try { u.voice = PH.voice; } catch (e) { /* lang below still picks Spanish */ }
+    u.lang = PH.voice.lang; u.rate = 0.85;
+    u.onend = u.onerror = function () { if (done) done(); };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }
+  // Compare word by word and show each phrase word as matched (solid ink) or missed (underlined).
+  function phJudge(transcripts) {
+    var ph = D.phrases, item = ph.items[PH.i], want = phWords(item.es), say = phSay(item), best = null;
+    transcripts.forEach(function (t) {
+      var got = phWords(t), hitAll = item.accept && item.accept.some(function (a) { return phNorm(t).replace(/\s/g, "").indexOf(a) > -1; });
+      var marks = want.map(function (w) { return hitAll || got.indexOf(w) > -1; });
+      var n = marks.filter(Boolean).length;
+      if (!best || n > best.n) best = { t: t, marks: marks, n: n };
+    });
+    if (!best) { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noSpeech) + "</p>"; return; }
+    var esWords = item.es.split(/\s+/), missed = [], missedSay = [];
+    var words = esWords.map(function (w, k) {
+      if (!best.marks[k]) { missed.push(w.replace(/[¿?¡!.,]/g, "")); missedSay.push(say[k]); }
+      return '<span class="ph-w ' + (best.marks[k] ? "is-hit" : "is-miss") + '">' + esc(w) + "</span>";
+    }).join(" ");
+    var msg = best.n === want.length ? esc(ph.nailed)
+      : best.n * 2 >= want.length ? esc(ph.close) + " " + esc(missed.join(" ")) + ' <span class="ph-say-inline">(' + esc(missedSay.join(" ")) + ")</span>"
+      : esc(ph.again);
+    $("ph-result").innerHTML = '<p class="ph-heard">' + esc(ph.heard) + " " + esc(best.t) + '</p><p class="ph-words" lang="es">' + words + '</p><p class="ph-msg">' + msg + "</p>";
+  }
+  function phStopMic() {
+    if (PH.stream) { PH.stream.getTracks().forEach(function (t) { t.stop(); }); PH.stream = null; }
+    if (PH.rec) { try { PH.rec.abort ? PH.rec.abort() : PH.rec.stop(); } catch (e) { /* already stopped */ } PH.rec = null; }
+    clearTimeout(PH.timer);
+    PH.busy = false;
+    if ($("ph-try")) $("ph-try").disabled = false;
+  }
+  function phTry() {
+    var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (PH.busy) return;
+    PH.busy = true; $("ph-try").disabled = true;
+    if (SR) {
+      var rec = new SR();
+      PH.rec = rec;
+      rec.lang = "es-EC"; rec.maxAlternatives = 3; rec.interimResults = false; rec.continuous = false;
+      var got = false;
+      rec.onresult = function (e) {
+        got = true;
+        var alts = [], r = e.results[0];
+        for (var k = 0; k < r.length; k++) alts.push(r[k].transcript);
+        phJudge(alts);
+        try { rec.stop(); } catch (er) { /* done */ }
+      };
+      rec.onerror = function (e) {
+        var msg = e && (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") ? ph.noMic : ph.noSpeech;
+        $("ph-result").innerHTML = '<p class="ph-msg">' + esc(msg) + "</p>";
+      };
+      rec.onend = function () { if (!got && !$("ph-result").textContent) $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noSpeech) + "</p>"; PH.rec = null; phStopMic(); };
+      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.listening) + "</p>";
+      try { rec.start(); } catch (e) { phStopMic(); }
+      return;
+    }
+    // No speech recognition (for example Firefox): record 4 seconds, play it back, then the voice.
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder)) {
+      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      PH.stream = stream;
+      var chunks = [], mr = new MediaRecorder(stream);
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+      mr.onstop = function () {
+        if (PH.stream) { PH.stream.getTracks().forEach(function (t) { t.stop(); }); PH.stream = null; }
+        var url = URL.createObjectURL(new Blob(chunks, { type: mr.mimeType || "audio/webm" })), au = new Audio(url);
+        $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.playing) + "</p>";
+        var next = function () { URL.revokeObjectURL(url); phSpeak(ph.items[PH.i].es, function () { phStopMic(); }); };
+        au.onended = next; au.onerror = next;
+        au.play().catch(next);
+      };
+      $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.recording) + "</p>";
+      mr.start();
+      PH.timer = setTimeout(function () { if (mr.state !== "inactive") mr.stop(); }, 4000);
+    }).catch(function () { $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noMic) + "</p>"; phStopMic(); });
+  }
+  function wirePhrases() {
+    if (!$("ph-card")) return;
+    var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) $("ph-try").textContent = ph.record;
+    phRender();
+    $("ph-prev").addEventListener("click", function () { phStopMic(); PH.i = (PH.i - 1 + ph.items.length) % ph.items.length; phRender(); });
+    $("ph-next").addEventListener("click", function () { phStopMic(); PH.i = (PH.i + 1) % ph.items.length; phRender(); });
+    $("ph-listen").addEventListener("click", function () { phSpeak(ph.items[PH.i].es); });
+    $("ph-try").addEventListener("click", phTry);
+    phUpdateVoice();
+    if ("speechSynthesis" in window && window.speechSynthesis.addEventListener) window.speechSynthesis.addEventListener("voiceschanged", phUpdateVoice);
+    document.addEventListener("visibilitychange", function () { if (document.hidden) phStopMic(); });
+    window.addEventListener("pagehide", phStopMic);
+  }
+
   function field(id, label, input, extraCls) {
     return '<div class="field' + (extraCls ? " " + extraCls : "") + '" id="fld-' + id + '"><label for="f-' + id + '">' + esc(label) + "</label>" + input +
       '<span class="error" id="e-' + id + '"></span></div>';
@@ -1083,7 +1223,7 @@
       }
       renderHero();
       renderChrome();
-      wireWall(); wireTabs(); wireMatrix(); wireForm(); wireGlobal();
+      wireWall(); wireTabs(); wireMatrix(); wireForm(); wireGlobal(); wirePhrases();
       applyNameParam();
       fitNames();
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNames);

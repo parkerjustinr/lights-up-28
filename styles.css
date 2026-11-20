@@ -386,6 +386,28 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .ruled dd { max-width: 62ch; }
 @media (min-width: 880px) { .venue-layout { grid-template-columns: 5fr 7fr; gap: 40px; } }
 
+/* ---------- Say it in Quito: one phrase card at a time, on paper ---------- */
+.ph-card { border-top: var(--rule); border-bottom: var(--rule); padding: 12px 0 22px; max-width: 980px; }
+.ph-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 18px; }
+.ph-count { margin: 0; font-family: var(--mono); font-weight: 500; font-size: 1.05rem; }
+.ph-nav { display: flex; gap: 8px; }
+.ph-body { min-height: 9.5em; }
+.ph-es { font-family: var(--display); font-weight: 800; font-stretch: 105%; font-size: clamp(2.4rem, 7.5vw, 6rem); line-height: 0.95; letter-spacing: -0.01em; margin: 0 0 14px; overflow-wrap: anywhere; }
+.ph-en { font-size: 1.2rem; margin: 0 0 6px; max-width: 46ch; }
+.ph-say { font-family: var(--mono); font-weight: 500; font-size: 1.05rem; margin: 0; }
+.ph-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.ph-result:empty { display: none; }
+.ph-result { margin-top: 16px; }
+.ph-result p { margin: 0 0 6px; }
+.ph-heard { font-family: var(--mono); font-weight: 500; }
+.ph-words { font-family: var(--display); font-weight: 800; font-size: 1.6rem; line-height: 1.5; }
+.ph-w.is-hit { background: var(--ink); color: var(--paper); padding: 0 6px; }
+.ph-w.is-miss { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 5px; }
+.ph-msg { font-weight: 700; }
+.ph-say-inline { font-family: var(--mono); font-weight: 500; }
+.ph-privacy { margin: 12px 0 0; font-size: 0.95rem; }
+.btn[disabled] { opacity: 0.6; cursor: default; }
+
 /* ---------- Register: a full ink field, the form on paper inside it ---------- */
 .sec-register { background: var(--ink); color: var(--paper); border-bottom: 0; }
 .sec-register .lede { color: var(--paper); }
