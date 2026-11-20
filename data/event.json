@@ -751,7 +751,8 @@
       "service-not-allowed": "Speech recognition isn't allowed in this browser, so this phrase switched to Record and compare. Tap it to record.",
       "audio-capture": "The microphone couldn't be shared with speech recognition, so this phrase switched to Record and compare. Tap it to record.",
       "network": "Speech recognition needs a network connection, so this phrase switched to Record and compare. Tap it to record."
-    }
+    },
+    "phrasebook": "Tap through and say it out loud."
   },
   "registration": {
     "heading": "Register",

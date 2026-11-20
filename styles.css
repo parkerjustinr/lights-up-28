@@ -105,7 +105,7 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
 /* ---------- stage: the keynote wall and the walk-up card ---------- */
 .stage { position: relative; background: var(--host); color: var(--on-host); padding: 0 var(--wall-pad); overflow: hidden; display: grid; grid-template-rows: 1fr auto auto; }
 .stage-body {
-  position: relative; min-height: 0; overflow: hidden; padding: 14px 0 calc(var(--lane) + 4px);
+  position: relative; min-height: 0; overflow: hidden; padding: 14px 0 calc(var(--lane) + 4px + var(--bubble-room, 0px));
   display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label photo" "name photo" "title title" "cue cue";
   column-gap: 12px; align-content: start;
 }
@@ -138,6 +138,14 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
 .stage-photo .wall-empty .qf { position: absolute; left: 50%; bottom: calc(14% + 2px); height: 56%; width: auto; aspect-ratio: 28 / 60; transform: translateX(-50%); }
 /* The visitor's queue figure: a 2px paper outline, their photo as the head. */
 .qf.is-you .you-ring { fill: var(--ink); stroke: var(--paper); stroke-width: 4px; paint-order: stroke; vector-effect: non-scaling-stroke; }
+/* The visitor's figure is a wrapper: the plain figure, and with a photo, a speech bubble above the head. */
+.qf-you { aspect-ratio: 28 / 60; }
+.qf-you > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.you-bubble { --b: 36px; position: absolute; left: calc(43% - var(--b) / 2); bottom: calc(100% + 9px); width: var(--b); height: var(--b); box-sizing: border-box; padding: 3px; background: var(--paper); border: 2px solid var(--ink); }
+.you-bubble canvas { display: block; width: 100%; height: 100%; }
+.you-bubble::after { content: ""; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); border: 6px solid transparent; border-top: 7px solid var(--ink); border-bottom: 0; }
+/* With a bubble the lane grows by the bubble's room, and the wall grows by the same, so text keeps its space. */
+.wall.has-bubble { --bubble-room: 52px; }
 .cue-strip.has-you { gap: 3px; }
 .cue-strip.has-you .cue-state { gap: 2px; letter-spacing: -0.02em; }
 .cue-strip.has-you .lamp { width: 5px; height: 5px; }
@@ -151,12 +159,12 @@ html:not([data-shot]) .btn-primary:hover { background: var(--host); border-color
 /* Screen turning on: a 2px paper line across the middle, then the photo opens from it (photoReveal in app.js). */
 .scanline { position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--paper); z-index: 4; }
 /* The queue lane: reserved space at the foot of the wall, so figures never touch text. */
-.queue { position: absolute; left: 0; right: 0; bottom: 0; height: var(--lane); z-index: 3; pointer-events: none; }
+.queue { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--lane) + var(--bubble-room, 0px)); z-index: 3; pointer-events: none; }
 .qf { position: absolute; left: 0; bottom: 0; height: calc(var(--h) * 0.52); width: auto; fill: var(--ink); overflow: visible; }
 .qf .cut { fill: none; stroke: var(--host); stroke-width: 1.6; }
 .qf .cutfill { fill: var(--host); }
 
-.wall { height: 380px; }
+.wall { height: calc(380px + var(--bubble-room, 0px)); }
 .wall-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 0; }
 .cue-strip { display: flex; gap: 4px; flex: 1 1 0; min-width: 0; }
 .cue-strip li { flex: 1 1 0; min-width: 0; }
@@ -189,8 +197,10 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
 .stage :focus-visible { outline-color: var(--on-host); }
 
 @media (min-width: 720px) {
-  .wall { height: clamp(440px, calc(100svh - 280px), 500px); }
-  .stage-body { display: block; padding: 28px 0 var(--lane); }
+  .wall { height: calc(clamp(440px, calc(100svh - 280px), 500px) + var(--bubble-room, 0px)); }
+  .you-bubble { --b: 44px; }
+  .wall.has-bubble { --bubble-room: 60px; }
+  .stage-body { display: block; padding: 28px 0 calc(var(--lane) + var(--bubble-room, 0px)); }
   .qf { height: var(--h); }
   .stage-copy { display: block; position: relative; z-index: 2; max-width: calc(100% - min(30%, 400px) - 32px); }
   .stage-label { font-size: 56px; font-stretch: 110%; margin-bottom: 12px; }

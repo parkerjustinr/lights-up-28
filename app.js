@@ -451,30 +451,24 @@
     duotone(ctx, cv.width, cv.height);
     return cv;
   }
-  // The figure's photo head: drawn from the original at 3x its displayed size, circle mask, 1.5px ink ring.
-  function youHead() {
-    if (!WU.src) return "";
-    var shown = 10 / 60 * 58, S = Math.ceil(shown * 3 * dpr()), src = WU.src;
-    var cv = document.createElement("canvas"); cv.width = cv.height = S;
-    var ctx = cv.getContext("2d"), side = src.width * 0.42, sx = (src.width - side) / 2, sy = Math.max(0, src.height * 0.32 - side / 2);
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(src, sx, sy, side, side, 0, 0, S, S);
-    duotone(ctx, S, S);
-    ctx.globalCompositeOperation = "destination-in";
-    ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2, 0, Math.PI * 2); ctx.fill();
-    ctx.globalCompositeOperation = "source-over";
-    var ring = 1.5 * S / shown;
-    ctx.lineWidth = ring; ctx.strokeStyle = cssVar("--ink", "#101218");
-    ctx.beginPath(); ctx.arc(S / 2, S / 2, S / 2 - ring / 2, 0, Math.PI * 2); ctx.stroke();
-    return cv.toDataURL("image/png");
-  }
-  // The visitor's figure: same body as the others, a 2px paper outline, their photo as the head if they added one.
+  // The visitor's figure: the plain figure with a 2px paper outline. With a photo, a small square speech
+  // bubble rides above the head (inside the wrapper, so it moves and hides with the figure).
   function youFigure() {
-    var head = youHead();
-    return '<svg class="qf is-you" data-k="6" viewBox="0 0 28 60" style="--h:58px" focusable="false">' +
-      '<circle class="you-ring" cx="12" cy="6" r="5"/>' +
-      (head ? '<image href="' + head + '" x="7" y="1" width="10" height="10"/>' : "") +
+    var svg = '<svg viewBox="0 0 28 60" focusable="false"><circle class="you-ring" cx="12" cy="6" r="5"/>' +
       '<path class="you-ring" d="M6 13h12l2 22h-3.2L15.4 60h-3L12 39l-.4 21h-3L7.2 35H4z"/></svg>';
+    var bubble = WU.src ? '<span class="you-bubble"><canvas width="132" height="132"></canvas></span>' : "";
+    return '<div class="qf qf-you is-you" data-k="6" style="--h:58px">' + bubble + svg + "</div>";
+  }
+  // The bubble photo: drawn at 3x the bubble size from the original image, duotoned, no CSS filters.
+  function drawYouBubble() {
+    var cv = document.querySelector("#queue .you-bubble canvas"), src = WU.src;
+    var wall = $("wall");
+    if (wall) wall.classList.toggle("has-bubble", !!src && VIS.joined);
+    if (!cv || !src) return;
+    var S = cv.width, ctx = cv.getContext("2d"), side = src.width * 0.56;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(src, (src.width - side) / 2, Math.max(0, src.height * 0.34 - side / 2), side, side, 0, 0, S, S);
+    duotone(ctx, S, S);
   }
   function youShot() {
     return WU.src
@@ -496,6 +490,8 @@
     drawYouWall();
     var f = figK(6);
     if (f) { var x = f._x, vis = f.style.visibility; f.insertAdjacentHTML("afterend", youFigure()); f.remove(); f = figK(6); setX(f, x); f.style.visibility = vis; }
+    drawYouBubble(); frameWallPhotos(); drawYouWall();
+    if (!Qs.busy) placeQueue(state.cue);
     cutTo(state.cue, false);
   }
   function joinQueue(rec, opts) {
@@ -516,6 +512,7 @@
       $("wall").querySelector(".stage-photo [data-cue='6']").hidden = state.cue !== 6;
       drawYouWall();
       $("queue").insertAdjacentHTML("beforeend", youFigure());
+      drawYouBubble(); frameWallPhotos(); drawYouWall();
       cutTo(state.cue, false);
       var f = figK(6), g = qGeom();
       f.style.visibility = "visible";
@@ -757,20 +754,26 @@
   };
 
   // ---------- Say it in Quito: one phrase card at a time ----------
+  // Phones (and browsers that can't speak or listen) get a plain phrasebook: no Listen, no Try it.
+  function phBook() {
+    var coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    return coarse || !("speechSynthesis" in window) || (!SR && !window.MediaRecorder);
+  }
   R.phrases = function () {
-    var ph = D.phrases;
+    var ph = D.phrases, book = phBook();
     return sectionShell("phrases", ph.heading,
       '<div class="ph-card" id="ph-card">' +
         '<div class="ph-top"><p class="ph-count" id="ph-count"></p>' +
           '<div class="ph-nav"><button type="button" class="btn btn-small" id="ph-prev">' + esc(ph.prev) + '</button>' +
           '<button type="button" class="btn btn-small" id="ph-next">' + esc(ph.next) + "</button></div></div>" +
         '<div class="ph-body" id="ph-body" aria-live="polite"></div>' +
-        '<div class="ph-actions"><button type="button" class="btn btn-primary btn-small" id="ph-listen" hidden>' + esc(ph.listen) + "</button>" +
-          '<button type="button" class="btn btn-small" id="ph-try">' + esc(ph.try) + "</button>" +
+        '<div class="ph-actions"' + (book ? " hidden" : "") + '><button type="button" class="btn btn-primary btn-small" id="ph-listen" hidden>' + esc(ph.listen) + "</button>" +
+          '<button type="button" class="btn btn-small" id="ph-try"' + (book ? " hidden" : "") + ">" + esc(ph.try) + "</button>" +
           '<span class="ph-meter" id="ph-meter" aria-hidden="true" hidden><i></i><i></i><i></i><i></i><i></i></span></div>' +
         '<div class="ph-result" id="ph-result" aria-live="polite"></div>' +
       "</div>" +
-      '<p class="ph-privacy">' + esc(ph.privacy) + "</p>");
+      '<p class="ph-privacy">' + esc(book ? ph.phrasebook : ph.privacy) + "</p>");
   };
   var PH = { i: 0, voice: null, busy: false, rec: null, stream: null, timer: null, recordOnly: {}, audio: null };
   // A 0.05s silent WAV, played inside a tap to unlock audio playback on iOS.
@@ -801,7 +804,7 @@
   // Voices load late on phones, so Listen is shown whenever the browser can speak at all.
   function phUpdateVoice() {
     PH.voice = phPickVoice();
-    if ($("ph-listen")) $("ph-listen").hidden = !("speechSynthesis" in window);
+    if ($("ph-listen")) $("ph-listen").hidden = phBook() || !("speechSynthesis" in window);
   }
   // Speak with the best Spanish voice, or lang es-ES with no voice set. onStart/onFail report whether it played.
   function phUtter(text, opts) {
