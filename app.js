@@ -519,6 +519,7 @@
       if (SHOT || opts.silent || Qs.busy) placeQueue(state.cue);
       else move(f, g.enter, slotX(g, 6 - state.cue - 1), 4, 900);
     }
+    renderCurtain();
     if (!opts.silent) {
       var live = $("wall-live");
       live.textContent = "";
@@ -1156,13 +1157,57 @@
   }
 
   // The bottom of the page: a slim ink band. Registration itself lives in the drawer under the wall.
+  // Curtain call: the six queue figures (plus the registrant) on an ink floor line in a host band.
+  // At 40% in view they bow left to right, once per page load; each one is a button that bows again.
   R.register = function () {
-    var dr = D.registration.drawer;
-    return '<section class="section sec-register reg-band" id="register" aria-labelledby="register-title"><div class="wrap reg-band-row">' +
-      '<h2 class="reg-band-text" id="register-title">' + esc(dr.band) + "</h2>" +
-      '<button type="button" class="btn reg-band-btn" data-reg-open>' + esc(dr.bandCta) + ' <span class="arrow" aria-hidden="true">&rarr;</span></button>' +
-      "</div></section>";
+    return '<section class="cc" id="register" aria-labelledby="register-title"><div class="wrap cc-inner" id="cc-inner">' + curtainInner() + "</div></section>";
   };
+  function curtainInner() {
+    var c = D.curtain, joined = VIS.joined && VIS.rec;
+    var first = joined ? (VIS.rec.first || splitName(VIS.rec.name).first) : "";
+    var fig = [0, 1, 2, 3, 4, 5].map(function (k) {
+      return '<li><button type="button" class="cc-fig" aria-label="' + esc(c.bow) + '">' + queueFigure(k).replace('class="qf"', 'class="qf cc-qf"') + "</button></li>";
+    });
+    if (joined) fig.push('<li><button type="button" class="cc-fig cc-you" aria-label="' + esc(c.bow) + '">' + youFigure() + "</button></li>");
+    return '<div class="cc-copy"><h2 class="cc-title" id="register-title">' + esc(joined ? c.registered.replace("{first}", first) : c.title) + "</h2>" +
+      '<p class="cc-date">' + esc(D.meta.dateLine) + "</p>" +
+      (joined
+        ? '<button type="button" class="cc-save" id="cc-save">' + esc(D.registration.card.saveLabel) + "</button>"
+        : '<button type="button" class="btn btn-primary cc-btn" data-reg-open>' + esc(c.cta) + ' <span class="arrow" aria-hidden="true">&rarr;</span></button>') +
+      '</div><ul class="cc-cast" aria-label="' + esc(c.cast) + '">' + fig.join("") + "</ul>";
+  }
+  var CC = { bowed: false };
+  function renderCurtain() {
+    var box = $("cc-inner");
+    if (!box) return;
+    box.innerHTML = curtainInner();
+    var cv = box.querySelector(".you-bubble canvas"), src = document.querySelector("#queue .you-bubble canvas");
+    if (cv && src) cv.getContext("2d").drawImage(src, 0, 0, cv.width, cv.height);
+  }
+  function bow(el, delay) {
+    if (SHOT || !el.animate) return;
+    el.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(20deg)", offset: 0.45 }, { transform: "rotate(0deg)" }],
+      { duration: 500, delay: delay || 0, easing: "ease-in-out" });
+  }
+  function bowAll() {
+    Array.prototype.forEach.call(document.querySelectorAll("#register .cc-fig"), function (b, i) { bow(b.firstElementChild, i * 90); });
+  }
+  function wireCurtain() {
+    var sec = $("register");
+    if (!sec) return;
+    sec.addEventListener("click", function (e) {
+      var f = e.target.closest(".cc-fig");
+      if (f) { bow(f.firstElementChild, 0); return; }
+      if (e.target.closest("#cc-save")) $("card-save").click();
+    });
+    if (SHOT || !("IntersectionObserver" in window)) return;
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (en) {
+        if (en.isIntersecting && !CC.bowed) { CC.bowed = true; io.disconnect(); bowAll(); }
+      });
+    }, { threshold: 0.4 });
+    io.observe(sec);
+  }
 
   R.faq = function () {
     var f = D.faq;
@@ -1923,7 +1968,7 @@
       if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
       renderChrome(); markOnWall();
-      wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases(); wireHouseLights(); wireStage();
+      wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases(); wireHouseLights(); wireStage(); wireCurtain();
       startEntrance();
       applyNameParam();
       // ?shot=1&q=7&n=Name: the registrant is already on the wall as Q7, empty photo state.

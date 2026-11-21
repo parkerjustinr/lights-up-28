@@ -839,10 +839,15 @@
       "demo": "Demo only. Nothing is sent anywhere.",
       "confirmed": "You're Q7. Press GO to walk on.",
       "walkOn": "Walk on now",
-      "photoLabel": "Photo",
-      "band": "Free for Tarnell customers.",
-      "bandCta": "Register"
+      "photoLabel": "Photo"
     }
+  },
+  "curtain": {
+    "title": "That's the show.",
+    "registered": "See you in Quito, {first}.",
+    "bow": "Take a bow",
+    "cast": "The cast",
+    "cta": "Register"
   },
   "faq": {
     "heading": "FAQ",
