@@ -358,6 +358,9 @@ html:not([data-shot]) .day-tab:hover:not([aria-selected="true"]) { background: v
 .s-time { font-family: var(--mono); font-weight: 500; font-size: 0.9rem; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .s-cue { font-family: var(--mono); font-weight: 500; font-size: 1rem; }
 .s-live { font-family: var(--mono); font-weight: 500; font-size: 0.8rem; background: var(--ink); color: var(--paper); padding: 2px 6px; }
+/* ON THE WALL: the keynote live on the wall. Ink tag with a host dot (keynote rows are host). */
+.s-onwall { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-weight: 500; font-size: 0.8rem; background: var(--ink); color: var(--paper); padding: 2px 7px 2px 6px; white-space: nowrap; }
+.s-onwall-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--host); flex: 0 0 8px; }
 .s-body { display: grid; gap: 6px; }
 .s-title { font-family: var(--body); font-weight: 700; font-size: 1.05rem; line-height: 1.25; }
 .s-speakers { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; }
@@ -376,6 +379,7 @@ html:not([data-shot]) .day-tab:hover:not([aria-selected="true"]) { background: v
   .session.is-keynote { padding: 18px 16px; }
   .s-body { display: contents; }
   .s-time { flex-wrap: nowrap; white-space: nowrap; }
+  .session.is-keynote .s-time { flex-wrap: wrap; row-gap: 8px; }
   .s-speakers { justify-content: flex-start; }
 }
 }

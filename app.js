@@ -555,11 +555,21 @@
     });
     $("go-btn").setAttribute("aria-label", D.wall.goText + ": call " + next.cue + ", " + next.sp.name);
     fitNames();
+    markOnWall();
     if (announce) {
       var live = $("wall-live");
       live.textContent = "";
       setTimeout(function () { live.textContent = c.cue + ". " + c.sp.name + ". " + c.s.title + (/[.!?]$/.test(c.s.title) ? "" : "."); }, 30);
     }
+  }
+
+  // The agenda row of the keynote live on the wall carries an ON THE WALL tag. Follows every cut,
+  // never switches the day tab. No tag on Q7 (the visitor has no session).
+  function markOnWall() {
+    Array.prototype.forEach.call(document.querySelectorAll(".s-onwall"), function (el) { el.parentNode.removeChild(el); });
+    var c = CUES[state.cue], row = c && !c.visitor && c.s.id ? $("session-" + c.s.id) : null;
+    if (!row) return;
+    row.querySelector(".s-time").insertAdjacentHTML("beforeend", '<span class="s-onwall"><span class="s-onwall-dot" aria-hidden="true"></span>' + esc(D.schedule.onWallTag) + "</span>");
   }
 
   // Names fit by narrowing the Anybody width axis, never by shrinking the size.
@@ -1557,6 +1567,7 @@
     wireTabs(); wireMatrix();
     if (CUES[state.cue]) $("wall-cue").textContent = cueLine(CUES[state.cue]);
     if (selId && $(selId)) selectTab($(selId), false);
+    markOnWall();
   }
 
   function wireGlobal() {
@@ -1868,7 +1879,7 @@
       var shotQ = SHOT ? parseInt(Q.get("q"), 10) : 0;
       if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
-      renderChrome();
+      renderChrome(); markOnWall();
       wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases(); wireHouseLights(); wireStage();
       startEntrance();
       applyNameParam();

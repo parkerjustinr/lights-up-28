@@ -541,7 +541,8 @@
         ]
       }
     ],
-    "liveTag": "LIVE"
+    "liveTag": "LIVE",
+    "onWallTag": "ON THE WALL"
   },
   "tickets": {
     "heading": "Access",
