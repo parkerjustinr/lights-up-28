@@ -374,19 +374,20 @@
     ENT.timers.push(setTimeout(function () { ENT.on = false; }, 1320 + d));
   }
 
-  // ---------- the opening: LIGHTS UP on ink, once per browser session (tier 1) ----------
+  // ---------- the opening: LIGHTS UP on ink, on every full page load (tier 1) ----------
   // A full-viewport ink overlay. The letters start as dark outlines and light solid host one at a
   // time, 110ms apart, hold 300ms, then the overlay lifts (opacity, 350ms) and the wall entrance plays.
   // About 2.7s in all. Any click, tap, key or scroll skips to the settled page. aria-hidden, never
-  // focusable, so focus is never trapped. ?shot=1, a hash or ?n= in the URL skip it.
+  // focusable, so focus is never trapped. ?shot=1 and ?n= skip it.
   var OP = { el: null, timers: [], evs: ["pointerdown", "keydown", "wheel", "touchstart", "scroll"] };
-  var OP_KEY = "intro:lights-up";
-  function opSeen() { try { return window.sessionStorage.getItem(OP_KEY) === "1"; } catch (e) { return false; } }
-  function opMark() { try { window.sessionStorage.setItem(OP_KEY, "1"); } catch (e) { /* plays once per load instead */ } }
+  // In memory only: set on load, so the opening plays on every full load or refresh and never again
+  // while scrolling or moving around the page.
+  var OP_PLAYED = false;
   function startOpening() {
     if (SHOT) return;
-    if (opSeen() || location.hash.length > 1 || NAME_PARAM || !document.body.animate) { startEntrance(0); return; }
-    opMark();
+    if (OP_PLAYED || NAME_PARAM || !document.body.animate) { startEntrance(0); return; }
+    OP_PLAYED = true;
+    OP.t0 = performance.now();
     var n = 0, rows = D.intro.lines.map(function (w) {
       return '<span class="op-row">' + w.split("").map(function (c) { n++; return '<span class="op-l">' + esc(c) + "</span>"; }).join("") + "</span>";
     }).join(" ");
@@ -432,6 +433,8 @@
   }
   function skipOpening(e) {
     if (!OP.el) return;
+    // A scroll in the first moments is the browser restoring the position on refresh, or a hash jump: not a skip.
+    if (e && e.type === "scroll" && performance.now() - OP.t0 < 600) return;
     opEnd(e && (e.type === "pointerdown" || e.type === "touchstart"));
     endEntrance();
   }
@@ -765,8 +768,8 @@
         '<div class="st-audience" aria-hidden="true"><svg viewBox="0 0 1600 80" preserveAspectRatio="xMidYMax slice" focusable="false">' + AUD_SHAPES + "</svg></div>" +
       "</div></div>";
   }
-  // The wide stage (one row of six): from 1040px with a fine pointer. Matches the CSS.
-  var WIDE_STAGE = "(min-width: 1040px) and (hover: hover), (min-width: 1040px) and (pointer: fine)";
+  // The wide stage (one row of six): from 1280px. Matches the CSS.
+  var WIDE_STAGE = "(min-width: 1280px)";
   function wideStage() { return window.matchMedia(WIDE_STAGE).matches; }
   // Draw the floor from the real layout: the back edge under the panels, the front edge between the
   // curtain legs, plank lines converging toward the back. The legs reach down to the front edge.
@@ -803,7 +806,7 @@
     // Photos get alt="": the name is the heading right next to them.
     function photo(p, w, h) {
       return '<div class="sp-photo duo">' + (p.photo
-        ? '<img src="' + esc(img(p.photo, w, h)) + '" alt="" width="' + w + '" height="' + h + '" loading="' + imgLoading(false) + '">'
+        ? '<img src="' + esc(img(p.photo, w, h)) + '" alt="" width="' + w + '" height="' + h + '" loading="' + imgLoading(true) + '">'
         : '<span class="sp-initials" aria-hidden="true">' + esc(initials(p.name)) + "</span>") + "</div>";
     }
     function link(p) {
@@ -1033,10 +1036,19 @@
     var say = item.say.split(" ").map(function (w) { return '<span class="nw">' + esc(w).replace(/[A-ZÁÉÍÓÚÑ]{2,}/g, "<b>$&</b>") + "</span>"; }).join(" ");
     // The phrase on the prompter, one span per word: dimmed until spoken or heard.
     $("ph-es").innerHTML = item.es.split(/\s+/).map(function (w, k) { return '<span class="pw" data-w="' + k + '">' + esc(w) + "</span>"; }).join(" ");
+    $("ph-es").insertAdjacentHTML("beforeend", '<span class="pr-probe" aria-hidden="true"></span>');
     $("ph-es").setAttribute("aria-label", item.es);
+    phLine();
     $("ph-body").innerHTML = '<p class="ph-en">' + esc(item.en) + '</p><p class="ph-say">' + say + "</p>";
     if ($("ph-result")) $("ph-result").innerHTML = "";
     phStep(1);
+  }
+  // The reading line sits just under the last line's baseline (0.15em clear), as a reading guide.
+  function phLine() {
+    var scr = $("ph-screen"), probe = scr && scr.querySelector(".pr-probe"), line = scr && scr.querySelector(".pr-line");
+    if (!probe || !line) return;
+    var fs = parseFloat(getComputedStyle($("ph-es")).fontSize);
+    line.style.top = (probe.getBoundingClientRect().top - scr.getBoundingClientRect().top + fs * 0.15 - 1) + "px";
   }
   // Word highlighting (tier 1): words up to n are full paper; `now` (the word being spoken) also gets
   // a host underline. n = -1 dims every word.
@@ -1364,6 +1376,8 @@
     phRender();
     $("ph-prev").addEventListener("click", function () { phStopMic(); PH.i = (PH.i - 1 + ph.items.length) % ph.items.length; phRender(); label(); });
     $("ph-next").addEventListener("click", function () { phStopMic(); PH.i = (PH.i + 1) % ph.items.length; phRender(); label(); });
+    window.addEventListener("resize", phLine);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(phLine);
     // Swipe the prompter left or right to change phrases (phones and touch screens).
     var sx = null, sy = 0;
     $("ph-screen").addEventListener("touchstart", function (e) { var t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
@@ -2223,10 +2237,11 @@
       markShotReady();
       if (!SHOT && location.hash.length > 1) {
         var id = location.hash.slice(1);
-        if (/^session-/.test(id)) goToSession(id);
+        var under = !!OP.el; // jump instantly while the opening covers the page
+        if (/^session-/.test(id)) goToSession(id, { instant: under });
         else {
           var target = $(id);
-          if (target) target.scrollIntoView({ behavior: smoothOK() ? "smooth" : "instant" });
+          if (target) target.scrollIntoView({ behavior: smoothOK() && !under ? "smooth" : "instant" });
         }
       }
     })

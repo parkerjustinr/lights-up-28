@@ -253,7 +253,7 @@ html:not([data-shot]) .go-btn:hover .go-ring { opacity: 0.7; }
 .ab-desc { max-width: 52ch; font-size: 1.2rem; margin: 0; }
 @media (min-width: 1200px) { .ab-inner { grid-template-columns: auto minmax(0, 32ch); align-items: end; column-gap: 48px; } .ab-desc { padding-bottom: 8px; } }
 
-/* The opening: LIGHTS UP on a full-viewport ink overlay, once per browser session (app.js startOpening). Tier 1. */
+/* The opening: LIGHTS UP on a full-viewport ink overlay, on every full page load (app.js startOpening). Tier 1. */
 .opening { position: fixed; inset: 0; z-index: 300; background: var(--ink); display: flex; align-items: center; padding: 0 var(--wall-pad); overflow: hidden; }
 .op-big { margin: 0; font-family: var(--display); font-weight: 800; font-size: 18vw; line-height: 0.86; font-stretch: 70%; letter-spacing: -0.01em; white-space: nowrap; margin-left: -0.04em; }
 .op-row { display: inline-block; }
@@ -286,12 +286,12 @@ html:not([data-shot]) .go-btn:hover .go-ring { opacity: 0.7; }
 /* The Stage: six 3:4 portrait panels in a flat theatre frame. Ink curtain legs with fold lines, a
    valance with a scalloped edge, the floor in perspective (app.js stageFrame draws it from the layout),
    footlights on the front lip, paper placards hanging under each panel, audience silhouettes in front.
-   One row of six from 1040px with a fine pointer; 2 columns (3 from 640px with a mouse) inside the
+   One row of six from 1280px (panels up to 200px); 3 by 2 from 768px; 2 columns below, inside the
    same frame otherwise. The spotlight cone (host 30% over paper, behind the content) drops from the
    valance. Tier 1. */
 .sec-speakers { position: relative; isolation: isolate; overflow: clip; }
 .sec-speakers > .wrap { position: relative; z-index: 1; }
-.st-theatre { --leg: clamp(56px, 6vw, 96px); --val: 44px; --depth: 56px; --aud: 72px; position: relative; isolation: isolate; padding-top: calc(var(--val) + 30px); margin-bottom: 8px; }
+.st-theatre { --leg: clamp(48px, 5vw, 96px); --val: 44px; --depth: 56px; --aud: 72px; position: relative; isolation: isolate; padding-top: calc(var(--val) + 30px); margin-bottom: 8px; }
 .st-valance { position: absolute; z-index: 4; left: 0; right: 0; top: 0; height: var(--val); background: var(--ink); }
 .st-scallops { position: absolute; left: 0; top: 100%; width: 100%; height: 16px; display: block; }
 .st-scallops path { fill: var(--ink); }
@@ -305,8 +305,8 @@ html:not([data-shot]) .go-btn:hover .go-ring { opacity: 0.7; }
   background: color-mix(in srgb, var(--host) 30%, var(--paper));
   clip-path: polygon(38% 0, 62% 0, 62% 0, 38% 0); visibility: hidden; }
 .st-cone.on { visibility: visible; clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); transition: clip-path 200ms ease-out; }
-.st-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(calc(var(--leg) + 16px), 1fr) repeat(6, minmax(0, 160px)) minmax(calc(var(--leg) + 16px), 1fr);
-  column-gap: 16px; grid-template-rows: auto auto var(--depth) 30px auto var(--aud); }
+.st-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(calc(var(--leg) + 16px), 1fr) repeat(6, minmax(0, 200px)) minmax(calc(var(--leg) + 16px), 1fr);
+  column-gap: 14px; grid-template-rows: auto auto var(--depth) 30px auto var(--aud); }
 .st-floor { grid-column: 1 / -1; grid-row: 3; position: relative; }
 .st-floor-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
 .st-floor-svg polygon { fill: var(--ink); }
@@ -339,7 +339,7 @@ html:not([data-shot]) .go-btn:hover .go-ring { opacity: 0.7; }
 .st-audience::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 26%; background: var(--ink); z-index: -1; }
 .st-audience svg { display: block; width: 100%; height: 100%; }
 .st-audience g { fill: var(--ink); stroke: var(--paper); stroke-width: 2px; paint-order: stroke; }
-@media (max-width: 1039px), (hover: none) and (pointer: coarse) {
+@media (max-width: 1279px) {
   .st-theatre { --leg: 14px; --val: 28px; --depth: 40px; --aud: 50px; padding: calc(var(--val) + 26px) calc(var(--leg) + 10px) 0; }
   .st-scallops { height: 12px; }
   .st-leg line { stroke-width: 2px; }
@@ -355,8 +355,12 @@ html:not([data-shot]) .go-btn:hover .go-ring { opacity: 0.7; }
   .st-lights i:nth-child(n+11) { display: none; }
   .st-audience { order: 4; height: var(--aud); margin: 0 calc(-1 * (var(--leg) + 10px)); }
 }
-@media (min-width: 640px) and (max-width: 1039px) { .st-theatre { --leg: 26px; } .st-lights i:nth-child(n+11) { display: block; } .st-lights i:nth-child(n+17) { display: none; } }
-@media (min-width: 640px) and (max-width: 1039px) and (hover: hover) { .st-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 768px) and (max-width: 1279px) {
+  .st-theatre { --leg: clamp(26px, 3vw, 40px); }
+  .st-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); max-width: 860px; }
+  .st-lights i:nth-child(n+11) { display: block; }
+  .st-lights i:nth-child(n+17) { display: none; }
+}
 
 /* ---------- schedule ---------- */
 .track-0 { --track: var(--paper); }
@@ -523,7 +527,12 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 html:not([data-shot]) .ph-arrow:hover { background: var(--paper); color: var(--ink); }
 .ph-arrow:active { transform: translateY(1px); }
 .pr-screen { position: relative; display: flex; align-items: center; min-height: clamp(220px, 30vw, 330px); padding: 24px 22px; border: 2px solid var(--ink-line); overflow: hidden; touch-action: pan-y; }
-.pr-line { position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--host); }
+.pr-line { position: absolute; left: 0; right: 0; top: 64%; height: 2px; background: var(--host); }
+/* Small host triangles at each end, pointing inward. */
+.pr-line::before, .pr-line::after { content: ""; position: absolute; top: -6px; border-top: 7px solid transparent; border-bottom: 7px solid transparent; }
+.pr-line::before { left: 0; border-left: 10px solid var(--host); }
+.pr-line::after { right: 0; border-right: 10px solid var(--host); }
+.pr-probe { display: inline-block; width: 0; height: 0; }
 .ph-es { position: relative; margin: 0; font-family: var(--display); font-weight: 800; font-stretch: 105%; font-size: clamp(2.2rem, 6.2vw, 5.5rem); line-height: 1.02; letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: break-word; hyphens: none; }
 .pw { color: color-mix(in srgb, var(--paper) 38%, var(--ink)); text-decoration: underline transparent; text-decoration-thickness: 0.07em; text-underline-offset: 0.12em; }
 .pw.on { color: var(--paper); }
