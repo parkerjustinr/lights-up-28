@@ -638,12 +638,17 @@
       var f = first(p.id);
       return f ? '<a class="sp-agenda" href="#session-' + esc(f.s.id) + '" aria-label="' + esc(sp.agendaLink + ": " + p.name) + '">' + esc(sp.agendaLink) + "</a>" : "";
     }
-    function card(p) {
-      var f = first(p.id);
-      return '<li class="sp-card" id="speaker-' + p.id + '">' +
-        (f && f.s.cue ? '<p class="sp-cue">' + esc(f.s.cue) + "</p>" : "") + photo(p, 480, 600) +
-        '<h3 class="sp-name">' + esc(p.name) + '</h3><p class="sp-role">' + esc(p.role) + '</p><p class="sp-company">' + esc(p.company) + "</p>" +
-        (p.place ? '<p class="sp-company sp-place">' + esc(p.place) + "</p>" : "") + link(p) + "</li>";
+    // The Stage: a 3:4 portrait panel per keynote, standing on an ink floor band.
+    function panel(p) {
+      var f = first(p.id), ci = CUES.findIndex(function (c) { return c.sp && c.sp.id === p.id; });
+      return '<li class="st-panel" id="speaker-' + p.id + '">' +
+        '<p class="st-cue">' + esc(f.s.cue) + "</p>" +
+        '<div class="st-photo duo">' + (p.photo
+          ? '<img src="' + esc(img(p.photo, 480, 640)) + '" alt="" width="480" height="640" loading="' + imgLoading(false) + '">'
+          : '<span class="sp-initials" aria-hidden="true">' + esc(initials(p.name)) + "</span>") + "</div>" +
+        '<div class="st-info"><h3 class="st-name">' + esc(p.name) + '</h3><p class="st-role">' + esc(p.role) + '</p><p class="st-co">' + esc(p.company) + "</p>" +
+        (p.place ? '<p class="st-co">' + esc(p.place) + "</p>" : "") +
+        '<p class="st-links">' + link(p) + (ci > -1 ? '<button type="button" class="st-wall" data-wall-cue="' + ci + '" aria-label="' + esc(sp.wallLink + ": " + p.name) + '">' + esc(sp.wallLink) + "</button>" : "") + "</p></div></li>";
     }
     function row(p) {
       return '<li class="sp-row" id="speaker-' + p.id + '">' + photo(p, 160, 160) +
@@ -652,10 +657,12 @@
     var keynote = sp.items.filter(function (p) { var f = first(p.id); return f && f.s.cue; });
     keynote.sort(function (a, b) { return parseInt(first(a.id).s.cue.slice(1), 10) - parseInt(first(b.id).s.cue.slice(1), 10); });
     var others = sp.items.filter(function (p) { return keynote.indexOf(p) < 0; });
-    return sectionShell("speakers", sp.heading,
+    return '<section class="section sec-speakers" id="speakers" aria-labelledby="speakers-title"><div class="st-cone" aria-hidden="true"></div>' +
+      '<div class="wrap"><h2 class="section-title" id="speakers-title">' + copy(sp.heading) + "</h2>" +
       (sp.intro ? '<p class="lede">' + copy(sp.intro) + "</p>" : "") +
-      '<h3 class="sp-group">' + esc(sp.keynoteHeading) + '</h3><ul class="sp-grid sp-keynotes">' + keynote.map(card).join("") + "</ul>" +
-      '<h3 class="sp-group">' + esc(sp.boothHeading) + '</h3><ul class="sp-booth">' + others.map(row).join("") + "</ul>");
+      '<h3 class="sp-group">' + esc(sp.keynoteHeading) + "</h3></div>" +
+      '<div class="st-grid"><div class="st-floor" aria-hidden="true"></div><ul class="st-panels">' + keynote.map(panel).join("") + "</ul></div>" +
+      '<div class="wrap"><h3 class="sp-group">' + esc(sp.boothHeading) + '</h3><ul class="sp-booth">' + others.map(row).join("") + "</ul></div></section>";
   };
 
   R.schedule = function () {
@@ -1572,6 +1579,60 @@
     });
   }
 
+  // ---------- the stage: spotlight and Cue on the wall ----------
+  // Spotlight (tier 1): a flat host cone drops from the top of the stage onto the hovered,
+  // focused or tapped panel in 200ms; the other panels dim. One at a time.
+  var SPOT = { on: null };
+  function spotOn(p) {
+    var sec = $("speakers"), cone = sec && sec.querySelector(".st-cone"), list = sec && sec.querySelector(".st-panels");
+    if (!cone || SPOT.on === p) return;
+    if (SPOT.on) SPOT.on.classList.remove("is-spot");
+    SPOT.on = p;
+    if (!p) { list.classList.remove("has-spot"); cone.classList.remove("on"); return; }
+    p.classList.add("is-spot"); list.classList.add("has-spot");
+    var sr = sec.getBoundingClientRect(), ph = p.querySelector(".st-photo").getBoundingClientRect();
+    var floor = sec.querySelector(".st-floor"), wide = floor && getComputedStyle(floor).display !== "none";
+    var gt = sec.querySelector(".st-grid").getBoundingClientRect().top - sr.top;
+    var top = wide ? gt : Math.max(gt, p.getBoundingClientRect().top - sr.top - 20);
+    var w = ph.width * 1.24;
+    cone.style.left = (ph.left - sr.left + ph.width / 2 - w / 2) + "px";
+    cone.style.width = w + "px";
+    cone.style.top = top + "px";
+    cone.style.height = (ph.bottom - sr.top - top) + "px";
+    cone.classList.remove("on");
+    void cone.offsetWidth;
+    cone.classList.add("on");
+  }
+  function wireStage() {
+    var list = document.querySelector("#speakers .st-panels");
+    if (!list) return;
+    Array.prototype.forEach.call(list.querySelectorAll(".st-panel"), function (p) {
+      p.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") spotOn(p); });
+      p.addEventListener("focusin", function () { spotOn(p); });
+      p.addEventListener("click", function () { spotOn(p); });
+    });
+    // Only a real mouse leaving clears it: a tap's spotlight stays until the next tap elsewhere.
+    list.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse" && !list.contains(document.activeElement)) spotOn(null); });
+    list.addEventListener("focusout", function (e) { if (!list.contains(e.relatedTarget)) spotOn(null); });
+    document.addEventListener("click", function (e) { if (SPOT.on && !list.contains(e.target)) spotOn(null); });
+    window.addEventListener("resize", function () { var p = SPOT.on; if (p) { SPOT.on = null; spotOn(p); } });
+    list.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-wall-cue]");
+      if (b) cueOnWall(+b.getAttribute("data-wall-cue"));
+    });
+  }
+  // Cue on the wall: back to the top (smooth unless reduced motion), then the cue-button jump.
+  function cueOnWall(i) {
+    var btn = document.querySelector('#wall .cue-btn[data-cue="' + i + '"]');
+    function go() { jumpTo(i); if (btn) btn.focus({ preventScroll: true }); }
+    if (!smoothOK() || window.scrollY < 2) { window.scrollTo(0, 0); go(); return; }
+    var done = false, t;
+    function fin() { if (done) return; done = true; clearTimeout(t); window.removeEventListener("scrollend", fin); go(); }
+    window.addEventListener("scrollend", fin);
+    t = setTimeout(fin, 1600);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   // ---------- house lights ----------
   // 0-25% of the scroll: paper to ink. 20-70%: letters light one per step. 65-85%: words appear.
   // 88%: the description. Holds fully lit to the end. ?shot=1 renders the end state, no pinning.
@@ -1808,7 +1869,7 @@
       if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
       renderChrome();
-      wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases(); wireHouseLights();
+      wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases(); wireHouseLights(); wireStage();
       startEntrance();
       applyNameParam();
       // ?shot=1&q=7&n=Name: the registrant is already on the wall as Q7, empty photo state.

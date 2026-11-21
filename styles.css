@@ -15,7 +15,7 @@
   --standby: #E5322D;      /* standby lamp only */
   --go: #18B868;           /* GO ring only */
   --called: color-mix(in srgb, var(--ink) 70%, var(--host)); /* called cues: dimmed but still 5.6:1 on the wall */
-  --dim-on-ink: #9C9C9A;    /* the Say it in Quito steps that aren't current, 7:1 on ink */
+  --dim-on-ink: #9C9C9A;    /* secondary text on ink (stage floor, Say it in Quito steps), 7:1 on ink */
   --muted: #4A4D57;        /* secondary text, 7:1 on paper */
   --hl-off: #2A2D36;      /* house lights: unlit letter outline only */
   --focus: var(--ink);
@@ -273,9 +273,6 @@ section.hl.hl-static { height: auto; }
 
 /* ---------- speakers: a cue sheet of six, then The Booth ---------- */
 .sp-group { font-family: var(--mono); font-weight: 500; font-size: 1rem; margin: 28px 0 12px; padding-top: 10px; border-top: var(--rule); }
-.sp-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 14px; }
-.sp-card { display: flex; flex-direction: column; }
-.sp-cue { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0 0 6px; }
 .sp-photo { width: 100%; aspect-ratio: 4 / 5; }
 .sp-booth { border-bottom: 1px solid var(--ink); }
 .sp-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--ink); }
@@ -293,10 +290,45 @@ section.hl.hl-static { height: auto; }
 .sp-name { font-size: 1.3rem; font-stretch: 105%; margin: 10px 0 4px; }
 .sp-role { font-size: 0.95rem; margin: 0; font-weight: 700; }
 .sp-company { color: var(--muted); font-size: 0.95rem; margin: 0 0 8px; }
-.sp-card .sp-company:has(+ .sp-place) { margin-bottom: 0; }
 .sp-agenda { font-weight: 700; font-size: 0.95rem; text-underline-offset: 3px; margin-top: auto; }
-@media (min-width: 640px) { .sp-keynotes { grid-template-columns: repeat(3, 1fr); } }
-@media (min-width: 1040px) { .sp-keynotes { grid-template-columns: repeat(6, 1fr); } .sp-booth { max-width: 880px; } }
+@media (min-width: 1040px) { .sp-booth { max-width: 880px; } }
+
+/* The Stage: six 3:4 portrait panels on an ink floor band (shared band from 1040px with a fine
+   pointer; each panel gets its own floor on phones, tablets and touch). The spotlight cone is a
+   flat clip-path trapezoid in host at 30% over paper, behind the content. Tier 1. */
+.sec-speakers { position: relative; isolation: isolate; overflow: clip; }
+.sec-speakers > .wrap, .st-grid { position: relative; z-index: 1; }
+.st-cone { position: absolute; z-index: 0; top: 0; left: 0; width: 0; height: 0; pointer-events: none;
+  background: color-mix(in srgb, var(--host) 30%, var(--paper));
+  clip-path: polygon(38% 0, 62% 0, 62% 0, 38% 0); visibility: hidden; }
+.st-cone.on { visibility: visible; clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); transition: clip-path 200ms ease-out; }
+.st-grid { display: grid; grid-template-columns: minmax(0, 1fr) repeat(6, minmax(0, 178px)) minmax(0, 1fr); column-gap: 16px; grid-template-rows: auto auto auto; margin-bottom: 8px; }
+.st-floor { grid-column: 1 / -1; grid-row: 3; background: var(--ink); position: relative; }
+.st-floor::before, .st-info::before { content: ""; position: absolute; left: 0; right: 0; top: 12px; height: 2px; background: var(--paper); }
+.st-panels { grid-column: 2 / -2; grid-row: 1 / 4; display: grid; grid-template-columns: subgrid; grid-template-rows: subgrid; }
+.st-panel { grid-row: span 3; display: grid; grid-template-rows: subgrid; }
+.st-cue { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0 0 6px; }
+.st-photo { aspect-ratio: 3 / 4; transition: filter 200ms ease-out; }
+.st-panels.has-spot .st-panel:not(.is-spot) .st-photo { filter: brightness(0.55); }
+.st-info { position: relative; color: var(--paper); padding: 28px 0 22px; display: flex; flex-direction: column; }
+.st-floor ~ .st-panels .st-info::before { display: none; }
+.st-name { font-size: 1.2rem; font-stretch: 100%; line-height: 1.05; margin: 0 0 6px; }
+.st-role { font-weight: 700; font-size: 0.9rem; line-height: 1.3; margin: 0 0 4px; }
+.st-co { color: var(--dim-on-ink); font-size: 0.9rem; line-height: 1.3; margin: 0; }
+.st-links { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: auto 0 0; padding-top: 12px; }
+.st-links a, .st-wall { color: var(--paper); font: 700 0.9rem/1.3 var(--body); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; background: none; border: 0; padding: 2px 0; cursor: pointer; text-align: left; }
+.st-links a:hover, .st-wall:hover { text-decoration-thickness: 2px; }
+.st-links a:focus-visible, .st-wall:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+@media (max-width: 1039px), (hover: none) and (pointer: coarse) {
+  .st-grid { display: block; padding: 0 var(--gutter); max-width: var(--max); margin: 0 auto 8px; }
+  .st-floor { display: none; }
+  .st-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; gap: 20px 12px; }
+  .st-panel { grid-row: auto; display: flex; flex-direction: column; }
+  .st-info { flex: 1; background: var(--ink); padding: 24px 12px 14px; }
+  .st-floor ~ .st-panels .st-info::before { display: block; }
+  .st-info::before { top: 10px; }
+}
+@media (min-width: 640px) and (max-width: 1039px) and (hover: hover) { .st-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ---------- schedule ---------- */
 .track-0 { --track: var(--paper); }
