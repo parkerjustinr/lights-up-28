@@ -73,12 +73,13 @@
     var iw = ih / ar;
     return { w: iw, h: ih, x: (W - iw) / 2, y: EYE_AT * H - E * ih };
   }
+  // Every wall-shaped stage (the wall and the program monitor's copy of it).
   function frameWallPhotos() {
-    var box = document.querySelector("#wall .stage-photo");
-    if (!box) return;
-    Array.prototype.forEach.call(box.querySelectorAll("img.wall-shot"), function (im) {
-      var f = wallFrame(box.clientWidth, box.clientHeight, parseFloat(im.getAttribute("data-eye")) || 0, (+im.getAttribute("height")) / (+im.getAttribute("width")));
-      im.style.width = f.w + "px"; im.style.height = f.h + "px"; im.style.left = f.x + "px"; im.style.top = f.y + "px";
+    Array.prototype.forEach.call(document.querySelectorAll(".wall .stage-photo"), function (box) {
+      Array.prototype.forEach.call(box.querySelectorAll("img.wall-shot"), function (im) {
+        var f = wallFrame(box.clientWidth, box.clientHeight, parseFloat(im.getAttribute("data-eye")) || 0, (+im.getAttribute("height")) / (+im.getAttribute("width")));
+        im.style.width = f.w + "px"; im.style.height = f.h + "px"; im.style.left = f.x + "px"; im.style.top = f.y + "px";
+      });
     });
   }
   function imgLoading(eager) { return SHOT || eager ? "eager" : "lazy"; }
@@ -205,36 +206,39 @@
   }
 
   // ---------- hero: the keynote wall + band ----------
-  function renderHero() {
-    var h = D.hero, m = D.meta, w = D.wall;
-    var c = CUES[state.cue];
+  // The wall's markup. The program monitor renders the same markup (main = false: no ids, lazy photos).
+  function stageMarkup(main) {
+    var w = D.wall, c = CUES[state.cue];
+    function id(x) { return main ? ' id="' + x + '"' : ""; }
     var photos = CUES.map(function (x, i) {
-      // All six photos are in the DOM and loaded eagerly, so a cut never shows a blank.
+      // All six photos are in the DOM (eager on the wall), so a cut never shows a blank.
       var z = wallSize(x.sp.photo);
-      return '<img src="' + esc(wallPhoto(x.sp.photo)) + '" alt="" class="wall-shot" width="' + z.w + '" height="' + z.h + '" loading="eager" decoding="sync"' + (x.sp.photoEye ? ' data-eye="' + x.sp.photoEye + '"' : "") + ' data-cue="' + i + '"' + (i === state.cue ? "" : " hidden") + ">";
+      return '<img src="' + esc(wallPhoto(x.sp.photo)) + '" alt="" class="wall-shot" width="' + z.w + '" height="' + z.h + '" loading="' + imgLoading(main) + '"' + (main ? ' decoding="sync"' : "") + (x.sp.photoEye ? ' data-eye="' + x.sp.photoEye + '"' : "") + ' data-cue="' + i + '"' + (i === state.cue ? "" : " hidden") + ">";
     }).join("");
     var strip = CUES.map(function (x, i) {
       return '<li><button type="button" class="cue-btn" data-cue="' + i + '"><span class="cue-q">' + esc(x.cue) + '</span><span class="cue-state" aria-hidden="true"></span></button></li>';
     }).join("");
-    $("hero-moment").innerHTML =
-      '<div class="stage wall" id="wall" role="region" aria-label="Keynote wall">' +
+    return '<div class="stage wall"' + (main ? ' id="wall" role="region" aria-label="Keynote wall"' : "") + ">" +
         '<div class="stage-body">' +
-          '<p class="stage-numeral" id="wall-numeral" aria-hidden="true">' + esc(c.cue) + "</p>" +
+          '<p class="stage-numeral"' + id("wall-numeral") + ' aria-hidden="true">' + esc(c.cue) + "</p>" +
           '<div class="stage-copy">' + stageCopy({ label: w.label, name: c.sp.name, title: c.s.title, cue: cueLine(c),
-            nameId: "wall-name", titleId: "wall-title", cueId: "wall-cue",
-            after: ' <a class="stage-link" id="wall-link" href="#session-' + esc(c.s.id) + '">' + esc(w.agendaLink) + "</a>" }) + "</div>" +
+            nameId: main && "wall-name", titleId: main && "wall-title", cueId: main && "wall-cue",
+            after: ' <a class="stage-link"' + id("wall-link") + ' href="#session-' + esc(c.s.id) + '">' + esc(w.agendaLink) + "</a>" }) + "</div>" +
           '<div class="stage-photo" aria-hidden="true">' + photos + '<span class="scanline" hidden></span></div>' +
-          '<div class="queue" id="queue" aria-hidden="true">' + CUES.map(function (x, k) { return queueFigure(k); }).join("") + "</div>" +
+          '<div class="queue"' + id("queue") + ' aria-hidden="true">' + CUES.map(function (x, k) { return queueFigure(k); }).join("") + "</div>" +
         "</div>" +
         '<div class="stage-floor" aria-hidden="true"></div>' +
         '<div class="wall-controls">' +
           '<ol class="cue-strip" aria-label="Cues">' + strip + "</ol>" +
-          '<button type="button" class="go-btn" id="go-btn"><span class="go-ring" aria-hidden="true"></span><span class="go-text">' + esc(w.goText) + "</span></button>" +
+          '<button type="button" class="go-btn"' + id("go-btn") + '><span class="go-ring" aria-hidden="true"></span><span class="go-text">' + esc(w.goText) + "</span></button>" +
           '<p class="wall-caption">' + esc(w.caption) + "</p>" +
         "</div>" +
-        '<p class="sr" aria-live="polite" id="wall-live"></p>' +
+        (main ? '<p class="sr" aria-live="polite" id="wall-live"></p>' : "") +
       "</div>";
-    $("hero-moment").insertAdjacentHTML("afterend", renderDrawer());
+  }
+  function renderHero() {
+    var h = D.hero, m = D.meta;
+    $("hero-moment").innerHTML = stageMarkup(true);
     $("hero").innerHTML =
       '<div class="band">' +
         '<div class="band-text"><h1 id="hero-title">' + esc(h.title) + "</h1>" +
@@ -261,13 +265,16 @@
     return '<svg class="qf" data-k="' + k + '" viewBox="0 0 28 60" style="--h:' + v.h + 'px" focusable="false">' +
       '<circle cx="12" cy="6" r="5"/><path d="M6 13h12l2 22h-3.2L15.4 60h-3L12 39l-.4 21h-3L7.2 35H4z"/>' + v.extra + "</svg>";
   }
-  var Qs = { busy: false, timers: [], anims: [], lastBand: -1000 };
-  function figs() { return Array.prototype.slice.call(document.querySelectorAll("#queue .qf")); }
-  function figK(k) { return document.querySelector('#queue .qf[data-k="' + k + '"]'); }
-  function qGeom() {
-    var lane = $("queue"), photo = document.querySelector("#wall .stage-photo");
+  var Qs = { busy: false, timers: [], anims: [] };
+  // Queue helpers take a stage root: the wall by default, or the program monitor's copy.
+  function figs(root) { return Array.prototype.slice.call((root || $("wall")).querySelectorAll(".queue .qf")); }
+  function figK(k, root) { return (root || $("wall")).querySelector('.queue .qf[data-k="' + k + '"]'); }
+  function qGeom(root) {
+    root = root || $("wall");
+    var lane = root.querySelector(".queue"), photo = root.querySelector(".stage-photo");
     var wide = window.matchMedia("(min-width: 720px)").matches;
-    var lr = lane.getBoundingClientRect(), pr = photo.getBoundingClientRect();
+    // Unscaled layout coordinates (the monitor's copy is scaled down with a transform).
+    var lr = { left: lane.offsetLeft, width: lane.offsetWidth }, pr = { left: photo.offsetLeft };
     var figW = wide ? 23 : 13, sp = wide ? 38 : 21;
     // The walker stops at the photo: its left edge on desktop, the right end of the floor on phones.
     var photoX = wide ? pr.left - lr.left - figW - 4 : lr.width - figW - 2;
@@ -282,18 +289,19 @@
     for (var s2 = 0; s2 <= n; s2++) kf.push({ transform: "translate(" + (x0 + (x1 - x0) * s2 / n) + "px," + (s2 % 2 ? -lift : 0) + "px)" });
     return kf;
   }
-  function move(f, x0, x1, steps, dur, delay) {
+  function move(f, x0, x1, steps, dur, delay, bag) {
     setX(f, x0);
     if (!f.animate) { setX(f, x1); return; }
     var a = f.animate(walkKF(x0, x1, steps, steps > 1 ? 3 : 2), { duration: dur, delay: delay || 0, easing: "linear", fill: "both" });
-    Qs.anims.push(a);
+    (bag || Qs.anims).push(a);
     a.onfinish = function () { setX(f, x1); a.cancel(); };
   }
   function later(ms, fn) { Qs.timers.push(setTimeout(fn, ms)); }
-  function placeQueue(i) {
-    if (!$("queue")) return;
-    var g = qGeom();
-    figs().forEach(function (f) {
+  function placeQueue(i, root) {
+    root = root || $("wall");
+    if (!root || !root.querySelector(".queue")) return;
+    var g = qGeom(root);
+    figs(root).forEach(function (f) {
       var k = +f.getAttribute("data-k");
       f.style.visibility = k > i ? "visible" : "hidden";
       setX(f, k > i ? slotX(g, k - i - 1) : g.enter);
@@ -309,25 +317,26 @@
   // A screen turning on: a thin paper line across the middle, then the photo opens from it to full
   // height (380ms, ease-out cubic) while settling from scale 1.06 and brightness 1.35. About 450ms.
   // Restarted at most once every 340ms, so it can't flicker.
-  function photoReveal() {
-    var box = document.querySelector("#wall .stage-photo"), now = performance.now();
-    if (!box || SHOT || now - Qs.lastBand < 340) return;
+  function photoReveal(root, bag) {
+    root = root || $("wall"); bag = bag || Qs.anims;
+    var box = root && root.querySelector(".stage-photo"), now = performance.now();
+    if (!box || SHOT || now - (box._lastBand || -1000) < 340) return;
     var shot = box.querySelector("[data-cue]:not([hidden])"), line = box.querySelector(".scanline");
     if (!shot || !shot.animate) return;
-    Qs.lastBand = now;
+    box._lastBand = now;
     var base = getComputedStyle(shot).filter, bright = base && base !== "none" ? base + " brightness(1.35)" : "brightness(1.35)";
     var ease = "cubic-bezier(0.33, 1, 0.68, 1)";
     // Open from the frame's middle line, even when the photo box is taller than the frame.
     var mid = box.clientHeight / 2 - shot.offsetTop, h = shot.offsetHeight || 1, top = Math.max(0, Math.min(100, (mid / h) * 100));
     shot.style.transformOrigin = "50% " + mid + "px";
-    Qs.anims.push(shot.animate([
+    bag.push(shot.animate([
       { clipPath: "inset(" + top + "% 0 " + (100 - top) + "% 0)", transform: "scale(1.06)", filter: bright },
       { clipPath: "inset(0% 0 0% 0)", transform: "scale(1)", filter: base && base !== "none" ? base : "none" }
     ], { duration: 380, delay: 70, easing: ease, fill: "backwards" }));
     if (line) {
       line.hidden = false;
       var la = line.animate([{ opacity: 1, transform: "scaleY(1)" }, { opacity: 1, offset: 0.16 }, { opacity: 0, transform: "scaleY(1)" }], { duration: 450, easing: "linear" });
-      Qs.anims.push(la);
+      bag.push(la);
       la.onfinish = function () { line.hidden = true; };
     }
   }
@@ -523,15 +532,17 @@
     return '<div class="qf qf-you is-you" data-k="6" style="--h:58px">' + bubble + svg + "</div>";
   }
   // The bubble photo: drawn at 3x the bubble size from the original image, duotoned, no CSS filters.
+  // Every bubble (wall queue, monitor queue, the cast) is drawn from the original.
   function drawYouBubble() {
-    var cv = document.querySelector("#queue .you-bubble canvas"), src = WU.src;
-    var wall = $("wall");
-    if (wall) wall.classList.toggle("has-bubble", !!src && VIS.joined);
-    if (!cv || !src) return;
-    var S = cv.width, ctx = cv.getContext("2d"), side = src.width * 0.56;
-    ctx.imageSmoothingQuality = "high";
-    ctx.drawImage(src, (src.width - side) / 2, Math.max(0, src.height * 0.34 - side / 2), side, side, 0, 0, S, S);
-    duotone(ctx, S, S);
+    var src = WU.src;
+    Array.prototype.forEach.call(document.querySelectorAll(".wall"), function (w) { w.classList.toggle("has-bubble", !!src && VIS.joined); });
+    if (!src) return;
+    Array.prototype.forEach.call(document.querySelectorAll(".you-bubble canvas"), function (cv) {
+      var S = cv.width, ctx = cv.getContext("2d"), side = src.width * 0.56;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(src, (src.width - side) / 2, Math.max(0, src.height * 0.34 - side / 2), side, side, 0, 0, S, S);
+      duotone(ctx, S, S);
+    });
   }
   function youShot() {
     return WU.src
@@ -540,22 +551,30 @@
   }
   // Q7's wall photo is drawn at the frame's real pixel size times devicePixelRatio, no CSS filters.
   function drawYouWall() {
-    var cv = document.querySelector("#wall canvas.wall-you"), box = document.querySelector("#wall .stage-photo");
-    if (!cv || !box || !WU.src) return;
-    var w = box.clientWidth * dpr(), h = box.clientHeight * dpr(), src = youCanvas(w, h);
-    cv.width = src.width; cv.height = src.height;
-    cv.getContext("2d").drawImage(src, 0, 0);
+    if (!WU.src) return;
+    Array.prototype.forEach.call(document.querySelectorAll(".wall .stage-photo"), function (box) {
+      var cv = box.querySelector("canvas.wall-you");
+      if (!cv) return;
+      // The frame's real pixel size: the monitor's copy is scaled down, so it needs fewer pixels.
+      var r = box.getBoundingClientRect(), sc = box.clientWidth ? r.width / box.clientWidth : 1;
+      var w = box.clientWidth * sc * dpr(), h = box.clientHeight * sc * dpr(), src = youCanvas(w, h);
+      cv.width = src.width; cv.height = src.height;
+      cv.getContext("2d").drawImage(src, 0, 0);
+    });
   }
+  function stages() { return Array.prototype.slice.call(document.querySelectorAll(".wall")); }
   function refreshVisitor() {
     CUES[CUES.length - 1] = visitorCue();
-    var old = document.querySelector('#wall .stage-photo [data-cue="6"]');
-    if (old) { old.insertAdjacentHTML("afterend", youShot()); old.remove(); }
-    drawYouWall();
-    var f = figK(6);
-    if (f) { var x = f._x, vis = f.style.visibility; f.insertAdjacentHTML("afterend", youFigure()); f.remove(); f = figK(6); setX(f, x); f.style.visibility = vis; }
+    stages().forEach(function (root) {
+      var old = root.querySelector('.stage-photo [data-cue="6"]');
+      if (old) { old.insertAdjacentHTML("afterend", youShot()); old.remove(); }
+      var f = figK(6, root);
+      if (f) { var x = f._x, vis = f.style.visibility; f.insertAdjacentHTML("afterend", youFigure()); f.remove(); f = figK(6, root); setX(f, x); f.style.visibility = vis; }
+    });
     drawYouBubble(); frameWallPhotos(); drawYouWall();
     if (!Qs.busy) placeQueue(state.cue);
     cutTo(state.cue, false);
+    monPaint(MON.cue);
   }
   function joinQueue(rec, opts) {
     opts = opts || {};
@@ -566,15 +585,15 @@
       VIS.joined = true;
       CUES.push(visitorCue());
       var y = D.wall.you;
-      $("wall").querySelector(".cue-strip").insertAdjacentHTML("beforeend",
-        '<li><button type="button" class="cue-btn is-you" data-cue="6"><span class="cue-q">' + esc(y.cue) + '</span><span class="cue-you" aria-hidden="true">' + esc(y.label) + '</span><span class="cue-state" aria-hidden="true"></span></button></li>');
-      $("wall").querySelector(".cue-strip").classList.add("has-you");
-      var b = $("wall").querySelector('.cue-btn[data-cue="6"]');
-      b.addEventListener("click", function () { jumpTo(6); });
-      $("wall").querySelector(".scanline").insertAdjacentHTML("beforebegin", youShot());
-      $("wall").querySelector(".stage-photo [data-cue='6']").hidden = state.cue !== 6;
-      drawYouWall();
-      $("queue").insertAdjacentHTML("beforeend", youFigure());
+      stages().forEach(function (root) {
+        root.querySelector(".cue-strip").insertAdjacentHTML("beforeend",
+          '<li><button type="button" class="cue-btn is-you" data-cue="6"><span class="cue-q">' + esc(y.cue) + '</span><span class="cue-you" aria-hidden="true">' + esc(y.label) + '</span><span class="cue-state" aria-hidden="true"></span></button></li>');
+        root.querySelector(".cue-strip").classList.add("has-you");
+        root.querySelector(".scanline").insertAdjacentHTML("beforebegin", youShot());
+        root.querySelector(".stage-photo [data-cue='6']").hidden = true;
+        root.querySelector(".queue").insertAdjacentHTML("beforeend", youFigure());
+      });
+      $("wall").querySelector('.cue-btn[data-cue="6"]').addEventListener("click", function () { jumpTo(6); });
       drawYouBubble(); frameWallPhotos(); drawYouWall();
       cutTo(state.cue, false);
       var f = figK(6), g = qGeom();
@@ -582,7 +601,9 @@
       if (SHOT || opts.silent || Qs.busy) placeQueue(state.cue);
       else move(f, g.enter, slotX(g, 6 - state.cue - 1), 4, 900);
     }
-    renderCurtain();
+    castJoin(opts);
+    monFit();
+    if (SHOT || opts.liveMonitor) monLive(); else monStandby();
     if (!opts.silent) {
       var live = $("wall-live");
       live.textContent = "";
@@ -590,24 +611,23 @@
     }
   }
 
-  // Hard cut: everything swaps in the same frame. No fade, no slide.
-  function cutTo(i, announce) {
-    var n = CUES.length;
-    i = ((i % n) + n) % n;
-    state.cue = i;
-    var c = CUES[i], next = CUES[(i + 1) % n];
-    $("wall-name").innerHTML = nameHtml(c.sp.name);
-    $("wall-numeral").textContent = c.cue;
-    $("wall-title").textContent = c.s.title;
-    $("wall-cue").textContent = cueLine(c);
-    $("wall-link").hidden = !!c.visitor;
-    var ph = document.querySelector("#wall .stage-photo");
+  // Paint one stage (the wall, or the program monitor's copy) on cue i. Hard cut, no fade, no slide.
+  function paintStage(root, i) {
+    var n = CUES.length, c = CUES[i];
+    if (!root || !c) return;
+    root.querySelector(".stage-name").innerHTML = nameHtml(c.sp.name);
+    root.querySelector(".stage-numeral").textContent = c.cue;
+    root.querySelector(".stage-title").textContent = c.s.title;
+    root.querySelector(".stage-cue > span").textContent = cueLine(c);
+    var link = root.querySelector(".stage-link");
+    link.hidden = !!c.visitor;
+    if (!c.visitor) link.setAttribute("href", "#session-" + c.s.id);
+    var ph = root.querySelector(".stage-photo");
     if (ph) ph.classList.toggle("is-you", !!c.visitor && !!WU.src);
-    if (!c.visitor) $("wall-link").setAttribute("href", "#session-" + c.s.id);
-    Array.prototype.forEach.call(document.querySelectorAll("#wall .stage-photo [data-cue]"), function (im) {
+    Array.prototype.forEach.call(root.querySelectorAll(".stage-photo [data-cue]"), function (im) {
       im.hidden = +im.getAttribute("data-cue") !== i;
     });
-    Array.prototype.forEach.call(document.querySelectorAll("#wall .cue-btn"), function (b) {
+    Array.prototype.forEach.call(root.querySelectorAll(".cue-btn"), function (b) {
       var k = +b.getAttribute("data-cue"), live = k === i, sb = k === (i + 1) % n, called = k < i;
       var x = CUES[k];
       b.classList.toggle("is-live", live);
@@ -617,9 +637,19 @@
       b.querySelector(".cue-state").innerHTML = sb ? '<span class="lamp"></span>' + esc(D.wall.standby) : "";
       b.setAttribute("aria-label", x.cue + ", " + x.sp.name + (x.visitor ? ", " + D.wall.you.aria : "") + (live ? ", " + D.wall.live : sb ? ", " + D.wall.standbyLong : called ? ", " + D.wall.called : ""));
     });
+    fitName(root.querySelector(".stage-name"));
+  }
+  // Hard cut on the wall: everything swaps in the same frame. No fade, no slide.
+  function cutTo(i, announce) {
+    var n = CUES.length;
+    i = ((i % n) + n) % n;
+    state.cue = i;
+    var c = CUES[i], next = CUES[(i + 1) % n];
+    paintStage($("wall"), i);
     $("go-btn").setAttribute("aria-label", D.wall.goText + ": call " + next.cue + ", " + next.sp.name);
-    fitNames();
     markOnWall();
+    // Before registering, the program monitor shows what the wall shows.
+    if (MON.mode === "mirror") monPaint(i);
     if (announce) {
       var live = $("wall-live");
       live.textContent = "";
@@ -1219,57 +1249,182 @@
     return '<input type="' + type + '" id="f-' + id + '" name="' + id + '" autocomplete="' + auto + '" required aria-describedby="e-' + id + '"' + (extra || "") + ">";
   }
 
-  // The bottom of the page: a slim ink band. Registration itself lives in the drawer under the wall.
-  // Curtain call: the six queue figures (plus the registrant) on an ink floor line in a host band.
-  // At 40% in view they bow left to right, once per page load; each one is a button that bows again.
+  // Curtain call: the registration stage. "That's the show." over the form (left) and the program
+  // monitor (right; stacked on phones), with the cast on an ink floor line under the whole band.
+  // At 40% in view the cast bows left to right, once per page load; each figure is a button that bows again.
   R.register = function () {
-    return '<section class="cc" id="register" aria-labelledby="register-title"><div class="wrap cc-inner" id="cc-inner">' + curtainInner() + "</div></section>";
+    var c = D.curtain;
+    return '<section class="cc" id="register" aria-labelledby="register-title"><div class="wrap cc-inner">' +
+      '<div class="cc-head"><h2 class="cc-title" id="register-title">' + esc(c.title) + "</h2>" +
+        '<p class="cc-sub">' + esc(c.sub) + "</p>" +
+        '<p class="cc-free">' + esc(c.free) + "</p>" +
+        '<p class="cc-date">' + esc(D.meta.dateLine) + "</p></div>" +
+      '<div class="cc-stage"><div class="cc-form">' + regForm() + "</div>" + monitorMarkup() + "</div>" +
+      "</div>" +
+      '<div class="cc-floor"><div class="wrap"><ul class="cc-cast" id="cc-cast" aria-label="' + esc(c.cast) + '">' +
+        [0, 1, 2, 3, 4, 5].map(function (k) { return castItem(queueFigure(k).replace('class="qf"', 'class="qf cc-qf"')); }).join("") +
+      "</ul></div></div></section>";
   };
-  function curtainInner() {
-    var c = D.curtain, joined = VIS.joined && VIS.rec;
-    var first = joined ? (VIS.rec.first || splitName(VIS.rec.name).first) : "";
-    var fig = [0, 1, 2, 3, 4, 5].map(function (k) {
-      return '<li><button type="button" class="cc-fig" aria-label="' + esc(c.bow) + '">' + queueFigure(k).replace('class="qf"', 'class="qf cc-qf"') + "</button></li>";
-    });
-    if (joined) fig.push('<li><button type="button" class="cc-fig cc-you" aria-label="' + esc(c.bow) + '">' + youFigure() + "</button></li>");
-    return '<div class="cc-copy"><h2 class="cc-title" id="register-title">' + esc(joined ? c.registered.replace("{first}", first) : c.title) + "</h2>" +
-      '<p class="cc-date">' + esc(D.meta.dateLine) + "</p>" +
-      (joined
-        ? '<button type="button" class="cc-save" id="cc-save">' + esc(D.registration.card.saveLabel) + "</button>"
-        : '<button type="button" class="btn btn-primary cc-btn" data-reg-open>' + esc(c.cta) + ' <span class="arrow" aria-hidden="true">&rarr;</span></button>') +
-      '</div><ul class="cc-cast" aria-label="' + esc(c.cast) + '">' + fig.join("") + "</ul>";
+  function castItem(fig, you) {
+    return '<li' + (you ? ' class="cc-you-li"' : "") + '><button type="button" class="cc-fig' + (you ? " cc-you" : "") + '" aria-label="' + esc(D.curtain.bow) + '">' + fig + "</button></li>";
   }
+  // The visitor's outlined figure (with the photo bubble) runs into the cast line, 900ms. Registering
+  // again swaps the figure in place.
+  function castJoin(opts) {
+    var cast = $("cc-cast");
+    if (!cast) return;
+    var old = cast.querySelector(".cc-you-li");
+    if (old) { old.outerHTML = castItem(youFigure(), true); drawYouBubble(); return; }
+    cast.insertAdjacentHTML("beforeend", castItem(youFigure(), true));
+    drawYouBubble();
+    var li = cast.querySelector(".cc-you-li");
+    if (SHOT || opts.silent || !li.animate) return;
+    var x0 = -(li.getBoundingClientRect().right + 24), kf = [], n = 8;
+    for (var s2 = 0; s2 <= n; s2++) kf.push({ transform: "translate(" + (x0 * (1 - s2 / n)) + "px," + (s2 % 2 ? -6 : 0) + "px)" });
+    li.animate(kf, { duration: 900, easing: "linear", fill: "backwards" });
+  }
+
+  // The registration form: first, last, work email, company, type, team size (Bring your team only), photo.
+  function regForm() {
+    var r = D.registration, fm = r.form, c = r.card, ph = c.photo, t = D.tickets, ts = r.teamSize, cc = D.curtain;
+    var opts = t.tiers.map(function (x) { return '<option value="' + x.id + '">' + esc(x.name) + "</option>"; }).join("");
+    var sizes = "";
+    for (var i = ts.min; i <= ts.max; i++) sizes += '<option value="' + i + '">' + i + " people</option>";
+    return '<form class="reg-form" id="reg-form" novalidate aria-label="' + esc(fm.label) + '">' +
+        '<div class="rf-grid">' +
+          field("first", "First name", textInput("first", "text", "given-name")) +
+          field("last", "Last name", textInput("last", "text", "family-name")) +
+          field("email", "Work email", textInput("email", "email", "email", ' inputmode="email"')) +
+          field("company", "Company", textInput("company", "text", "organization")) +
+          field("tier", "Registration type", '<select id="f-tier" name="tier">' + opts + "</select>") +
+          field("size", ts.label, '<select id="f-size" name="size">' + sizes + "</select>", "field-size") +
+        "</div>" +
+        '<div class="rf-photo"><span class="rf-thumb" id="wu-slot" role="img" aria-label="' + esc(ph.labelEmpty) + '">' + queueFigure(0) + "</span>" +
+          '<button type="button" class="linkish" id="wu-take">' + esc(ph.take) + "</button>" +
+          '<button type="button" class="linkish" id="wu-upload">' + esc(ph.upload) + "</button>" +
+          '<input type="file" id="wu-file" accept="image/*" hidden>' +
+          '<p class="wu-status" id="wu-status" role="status"></p>' +
+          // Camera panel: a 4:5 live preview, mirrored like a selfie, then a look at the shot before using it.
+          '<div class="cam-panel" id="cam-panel" hidden><div class="cam-frame">' +
+            '<video class="cam-video" id="cam-video" muted playsinline autoplay aria-label="' + esc(ph.labelLive) + '"></video>' +
+            '<canvas class="cam-shot" id="cam-shot" role="img" aria-label="' + esc(ph.labelShot) + '" hidden></canvas></div>' +
+            '<div class="cam-actions"><button type="button" class="btn cam-go" id="wu-snap">' + esc(ph.snap) + "</button>" +
+              '<button type="button" class="linkish" id="wu-cancel">' + esc(ph.cancel) + "</button>" +
+              '<button type="button" class="btn cam-go" id="cam-use" hidden>' + esc(ph.use) + "</button>" +
+              '<button type="button" class="linkish" id="cam-retake" hidden>' + esc(ph.retake) + "</button></div></div></div>" +
+        '<div class="rf-submit"><button type="submit" class="btn btn-primary rf-go" id="reg-submit">' + esc(fm.submit) + "</button>" +
+          '<p class="rf-demo">' + esc(fm.demo) + "</p></div>" +
+      "</form>" +
+      '<div class="reg-done" id="reg-done" tabindex="-1" hidden><p class="rd-line" id="rd-line"></p>' +
+        '<p class="rd-links"><button type="button" class="linkish" id="card-save">' + esc(c.saveLabel) + "</button>" +
+        '<button type="button" class="linkish" id="cal-all">' + esc(c.calendar) + "</button>" +
+        '<button type="button" class="linkish" id="reg-again">' + esc(c.againLabel) + "</button></p></div>";
+  }
+
+  // ---------- the program monitor: a framed copy of the wall at about 40% ----------
+  // Same markup as the wall (stageMarkup), laid out at the wall's own size and scaled down. Before
+  // registering it mirrors the wall's cue. After a valid submit it stands by on Q7 with a GO on the
+  // bezel; GO plays the walk-up here: the figure walks, the screen powers on, name and photo appear.
+  var MON = { mode: "mirror", cue: 0, busy: false, anims: [], timers: [] };
+  function monitorMarkup() {
+    var c = D.curtain;
+    return '<div class="monitor" id="monitor" role="group" aria-label="' + esc(c.monitor) + '"><div class="mon-bezel">' +
+      '<p class="mon-label" aria-hidden="true">' + esc(c.program) + "</p>" +
+      '<div class="mon-screen" id="mon-screen" inert><div class="mon-scale" id="mon-scale">' + stageMarkup(false) + "</div></div>" +
+      '<div class="mon-foot"><button type="button" class="go-btn mon-go" id="mon-go" hidden aria-label="' + esc(c.walkOn) + '"><span class="go-ring" aria-hidden="true"></span><span class="go-text">' + esc(D.wall.goText) + "</span></button>" +
+        '<span class="mon-go-label" id="mon-go-label" aria-hidden="true" hidden>' + esc(c.walkOn) + "</span></div>" +
+      '<p class="sr" aria-live="polite" id="mon-live"></p>' +
+      "</div></div>";
+  }
+  function monWall() { return document.querySelector("#mon-scale .wall"); }
+  // Lay the copy out at the wall's own size, then scale it to the screen's width.
+  function monFit() {
+    var sc = $("mon-scale"), scr = $("mon-screen"), wall = $("wall");
+    if (!sc || !wall) return;
+    var W = wall.offsetWidth, H = wall.offsetHeight, k = scr.clientWidth / (W || 1);
+    sc.style.width = W + "px"; sc.style.height = H + "px";
+    sc.style.transform = "scale(" + k + ")";
+    scr.style.height = Math.round(H * k) + "px";
+    frameWallPhotos(); drawYouWall();
+    if (!MON.busy) placeQueue(MON.cue, monWall());
+  }
+  function monPaint(i) {
+    var r = monWall();
+    if (!r || !CUES[i]) return;
+    MON.cue = i;
+    paintStage(r, i);
+    if (!MON.busy) placeQueue(i, r);
+  }
+  function monStop() {
+    MON.timers.forEach(clearTimeout); MON.timers = [];
+    MON.anims.forEach(function (a) { try { a.cancel(); } catch (e) { /* done */ } }); MON.anims = [];
+    MON.busy = false;
+  }
+  // Q7 on standby: Q6 is live, the visitor waits at the front of the queue, GO shows on the bezel.
+  function monStandby() {
+    monStop();
+    MON.mode = "standby";
+    monPaint(CUES.length - 2);
+    $("mon-go").hidden = false; $("mon-go-label").hidden = false;
+  }
+  // Q7 live: the end state of the walk-up (also what ?shot=1&n= shows).
+  function monLive() {
+    monStop();
+    MON.mode = "live";
+    monPaint(CUES.length - 1);
+    $("mon-go").hidden = true; $("mon-go-label").hidden = true;
+  }
+  function monWalkOn() {
+    var r = monWall(), b = $("mon-go");
+    if (!r || MON.busy || MON.mode !== "standby") return;
+    var now = performance.now();
+    if (now - (b._fired || 0) >= 340) { b._fired = now; b.classList.add("is-fired"); void b.offsetWidth; requestAnimationFrame(function () { requestAnimationFrame(function () { b.classList.remove("is-fired"); }); }); }
+    var g = qGeom(r), f = figK(6, r), i = CUES.length - 1;
+    MON.busy = true;
+    move(f, slotX(g, 0), g.photoX, 2, 600, 0, MON.anims);
+    MON.timers.push(setTimeout(function () {
+      f.style.visibility = "hidden";
+      MON.mode = "live";
+      paintStage(r, i); MON.cue = i;
+      photoReveal(r, MON.anims);
+      var c = CUES[i], live = $("mon-live");
+      live.textContent = "";
+      setTimeout(function () { live.textContent = c.cue + ". " + c.sp.name + ". " + c.s.title + "."; }, 30);
+    }, 600));
+    MON.timers.push(setTimeout(function () {
+      MON.busy = false;
+      b.hidden = true; $("mon-go-label").hidden = true;
+      $("reg-done").focus({ preventScroll: true });
+    }, 1060));
+  }
+
   var CC = { bowed: false };
-  function renderCurtain() {
-    var box = $("cc-inner");
-    if (!box) return;
-    box.innerHTML = curtainInner();
-    var cv = box.querySelector(".you-bubble canvas"), src = document.querySelector("#queue .you-bubble canvas");
-    if (cv && src) cv.getContext("2d").drawImage(src, 0, 0, cv.width, cv.height);
-  }
   function bow(el, delay) {
     if (SHOT || !el.animate) return;
     el.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(20deg)", offset: 0.45 }, { transform: "rotate(0deg)" }],
       { duration: 500, delay: delay || 0, easing: "ease-in-out" });
   }
   function bowAll() {
-    Array.prototype.forEach.call(document.querySelectorAll("#register .cc-fig"), function (b, i) { bow(b.firstElementChild, i * 90); });
+    Array.prototype.forEach.call(document.querySelectorAll("#cc-cast .cc-fig"), function (b, i) { bow(b.firstElementChild, i * 90); });
   }
   function wireCurtain() {
     var sec = $("register");
     if (!sec) return;
-    sec.addEventListener("click", function (e) {
+    $("cc-cast").addEventListener("click", function (e) {
       var f = e.target.closest(".cc-fig");
-      if (f) { bow(f.firstElementChild, 0); return; }
-      if (e.target.closest("#cc-save")) $("card-save").click();
+      if (f) bow(f.firstElementChild, 0);
     });
+    $("mon-go").addEventListener("click", monWalkOn);
+    monFit();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(monFit);
+    window.addEventListener("resize", monFit);
     if (SHOT || !("IntersectionObserver" in window)) return;
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (en) {
         if (en.isIntersecting && !CC.bowed) { CC.bowed = true; io.disconnect(); bowAll(); }
       });
     }, { threshold: 0.4 });
-    io.observe(sec);
+    io.observe($("cc-cast"));
   }
 
   R.faq = function () {
@@ -1348,112 +1503,33 @@
     setTier(state.tier);
   }
 
-  // ---------- the registration drawer, directly under the wall ----------
-  function renderDrawer() {
-    var r = D.registration, dr = r.drawer, c = r.card, ph = c.photo, t = D.tickets, ts = r.teamSize;
-    var opts = t.tiers.map(function (x) { return '<option value="' + x.id + '">' + esc(x.name) + "</option>"; }).join("");
-    var sizes = "";
-    for (var i = ts.min; i <= ts.max; i++) sizes += '<option value="' + i + '">' + i + " people</option>";
-    return '<div class="drawer" id="reg-drawer" role="region" aria-labelledby="drawer-title" hidden><div class="drawer-in">' +
-      '<div class="drawer-head"><h2 class="drawer-title" id="drawer-title">' + esc(dr.title) + "</h2>" +
-        '<button type="button" class="drawer-x" id="drawer-x" aria-label="' + esc(dr.close) + '"><span aria-hidden="true">&times;</span></button></div>' +
-      '<form class="drawer-form" id="reg-form" novalidate>' +
-        '<div class="dr-row">' +
-          field("first", "First name", textInput("first", "text", "given-name")) +
-          field("last", "Last name", textInput("last", "text", "family-name")) +
-          field("email", "Work email", textInput("email", "email", "email", ' inputmode="email"')) +
-        "</div>" +
-        '<div class="dr-row">' +
-          field("company", "Company", textInput("company", "text", "organization")) +
-          field("tier", "Registration type", '<select id="f-tier" name="tier">' + opts + "</select>") +
-          field("size", ts.label, '<select id="f-size" name="size">' + sizes + "</select>", "field-size") +
-        "</div>" +
-        '<div class="dr-foot">' +
-          '<div class="dr-photo"><span class="dr-thumb" id="wu-slot" role="img" aria-label="' + esc(ph.labelEmpty) + '">' + queueFigure(0) + "</span>" +
-            '<button type="button" class="linkish" id="wu-take">' + esc(ph.take) + "</button>" +
-            '<button type="button" class="linkish" id="wu-upload">' + esc(ph.upload) + "</button>" +
-            '<input type="file" id="wu-file" accept="image/*" hidden>' +
-            '<p class="wu-status" id="wu-status" role="status"></p>' +
-            // Camera panel: a 4:5 live preview, mirrored like a selfie, then a look at the shot before using it.
-            '<div class="cam-panel" id="cam-panel" hidden><div class="cam-frame">' +
-              '<video class="cam-video" id="cam-video" muted playsinline autoplay aria-label="' + esc(ph.labelLive) + '"></video>' +
-              '<canvas class="cam-shot" id="cam-shot" role="img" aria-label="' + esc(ph.labelShot) + '" hidden></canvas></div>' +
-              '<div class="cam-actions"><button type="button" class="btn cam-go" id="wu-snap">' + esc(ph.snap) + "</button>" +
-                '<button type="button" class="linkish" id="wu-cancel">' + esc(ph.cancel) + "</button>" +
-                '<button type="button" class="btn cam-go" id="cam-use" hidden>' + esc(ph.use) + "</button>" +
-                '<button type="button" class="linkish" id="cam-retake" hidden>' + esc(ph.retake) + "</button></div></div></div>" +
-          '<div class="dr-submit"><button type="submit" class="btn dr-go" id="reg-submit">' + esc(dr.submit) + "</button>" +
-            '<p class="dr-demo">' + esc(dr.demo) + "</p></div>" +
-        "</div>" +
-      "</form>" +
-      '<div class="drawer-done" id="drawer-done" tabindex="-1" hidden><p class="dr-done-line">' + esc(dr.confirmed) + "</p>" +
-        '<p class="dr-links"><button type="button" class="linkish" id="walk-on">' + esc(dr.walkOn) + "</button>" +
-        '<button type="button" class="linkish" id="card-save">' + esc(c.saveLabel) + "</button>" +
-        '<button type="button" class="linkish" id="cal-all">' + esc(c.calendar) + "</button>" +
-        '<button type="button" class="linkish" id="reg-again">' + esc(c.againLabel) + "</button></p></div>" +
-    "</div></div>";
-  }
-  var DR = { trigger: null };
-  function drawerOpen() { var d = $("reg-drawer"); return d && !d.hidden; }
-  function setTriggersExpanded(on) {
-    Array.prototype.forEach.call(document.querySelectorAll('a[href="#register"], [data-reg-open]'), function (t) {
-      t.setAttribute("aria-controls", "reg-drawer"); t.setAttribute("aria-expanded", String(on));
-    });
-  }
   // Height of what sticks to the top: the nav bar. Not in ?shot=1.
   function stickyTop() {
     if (SHOT) return 0;
     var header = document.querySelector(".site-header");
     return header ? header.getBoundingClientRect().height : 0;
   }
-  // Scroll so the wall's floor line and the drawer are both in view.
-  function scrollToDrawer(instant) {
-    var floor = document.querySelector("#wall .stage-floor"), header = document.querySelector(".site-header");
-    if (!floor) return;
-    var off = SHOT || !header ? 8 : stickyTop() + 12;
-    var top = floor.getBoundingClientRect().top + window.pageYOffset - off;
-    window.scrollTo({ top: Math.max(0, top), behavior: !instant && smoothOK() ? "smooth" : "instant" });
+  // Every Register trigger: scroll to the curtain call with its heading below the nav (smooth, instant
+  // under reduced motion) and focus the first field (or the confirmation, once registered).
+  function goToRegister(opts) {
+    var h = $("register-title");
+    if (!h) return;
+    var top = h.getBoundingClientRect().top + window.pageYOffset - stickyTop() - 16;
+    window.scrollTo({ top: Math.max(0, top), behavior: !(opts && opts.instant) && smoothOK() ? "smooth" : "instant" });
+    var target = $("reg-form").hidden ? $("reg-done") : $("f-first");
+    if (target) target.focus({ preventScroll: true });
   }
-  function openDrawer(trigger, opts) {
-    opts = opts || {};
-    var d = $("reg-drawer");
-    if (!d) return;
-    DR.trigger = trigger || null;
-    d.hidden = false;
-    setTriggersExpanded(true);
-    if (!opts.noScroll) scrollToDrawer();
-    if (!opts.noFocus) {
-      var done = $("drawer-done");
-      var target = done && !done.hidden ? done : $("f-first");
-      if (target) target.focus({ preventScroll: true });
-    }
-  }
-  function closeDrawer() {
-    var d = $("reg-drawer");
-    if (!d || d.hidden) return;
-    stopCamera();
-    closeCam();
-    d.hidden = true;
-    setTriggersExpanded(false);
-    if (DR.trigger && document.contains(DR.trigger)) DR.trigger.focus({ preventScroll: true });
-  }
-  function wireDrawer() {
-    var d = $("reg-drawer");
-    if (!d) return;
-    setTriggersExpanded(false);
-    // Every Register trigger opens (or closes) the drawer. Access's "Register as ..." already set the type.
+  function wireRegister() {
+    if (!$("reg-form")) return;
+    // Access's "Register as ..." has already set the type through setTier.
     document.addEventListener("click", function (e) {
-      var t = e.target.closest && e.target.closest('a[href="#register"], [data-reg-open]');
+      var t = e.target.closest && e.target.closest('a[href="#register"]');
       if (!t) return;
       e.preventDefault();
-      if (drawerOpen()) closeDrawer(); else openDrawer(t);
+      goToRegister();
     });
-    $("drawer-x").addEventListener("click", closeDrawer);
-    d.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.preventDefault(); closeDrawer(); } });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && drawerOpen() && !d.contains(document.activeElement)) closeDrawer(); });
     wireForm();
     wirePhoto();
-    $("walk-on").addEventListener("click", function () { if (VIS.joined) { jumpTo(6); window.scrollTo({ top: 0, behavior: smoothOK() ? "smooth" : "instant" }); } });
     $("card-save").addEventListener("click", function () {
       if (!VIS.joined) return;
       var c = visitorCue();
@@ -1477,7 +1553,7 @@
       Array.prototype.forEach.call($("reg-form").querySelectorAll(".error"), function (el) { el.textContent = ""; });
       setTier(state.tier);
       resetThumb();
-      $("drawer-done").hidden = true;
+      $("reg-done").hidden = true;
       $("reg-form").hidden = false;
       $("f-first").focus();
     });
@@ -1515,7 +1591,7 @@
         return;
       }
       var tier = byId(D.tickets.tiers, form.elements.tier.value);
-      confirmReg({ name: val("first") + " " + val("last"), company: val("company"), tier: tier,
+      confirmReg({ name: val("first") + " " + val("last"), first: val("first"), company: val("company"), tier: tier,
         size: tier.id === "team" ? form.elements.size.value : "" }, { focus: true });
     });
   }
@@ -1529,14 +1605,22 @@
     return rec.company + " · " + rec.tier.name + (rec.size ? ", " + rec.size + " people" : "");
   }
 
-  // A valid submit: the drawer collapses to one line, and the visitor joins the queue as Q7 at once.
+  // A valid submit: the form gives way to one line, the visitor runs into the cast and joins the
+  // wall's queue as Q7, and the program monitor stands by on Q7.
   function confirmReg(rec, opts) {
     opts = opts || {};
     stopCamera();
+    closeCam();
+    var first = rec.first || splitName(rec.name).first;
+    $("rd-line").textContent = D.curtain.confirmed.replace("{first}", first);
     $("reg-form").hidden = true;
-    $("drawer-done").hidden = false;
-    joinQueue(rec, { silent: !!opts.silent });
-    if (opts.focus) { scrollToDrawer(); $("drawer-done").focus({ preventScroll: true }); }
+    $("reg-done").hidden = false;
+    joinQueue(rec, { silent: !!opts.silent, liveMonitor: !!opts.liveMonitor });
+    if (opts.focus) {
+      var top = $("register-title").getBoundingClientRect().top + window.pageYOffset - stickyTop() - 16;
+      if (window.pageYOffset > top) window.scrollTo({ top: top, behavior: smoothOK() ? "smooth" : "instant" });
+      $("reg-done").focus({ preventScroll: true });
+    }
   }
 
   // ---------- registrant photo: camera or upload, kept in memory only ----------
@@ -1672,10 +1756,10 @@
       im.src = url;
       this.value = "";
     });
-    // Leaving the drawer, hiding the tab or leaving the page stops the camera.
+    // Scrolling the form out of view, hiding the tab or leaving the page stops the camera.
     if ("IntersectionObserver" in window) {
       WU.observer = new IntersectionObserver(function (es) { es.forEach(function (e) { if (!e.isIntersecting) stopCamera(); }); });
-      WU.observer.observe($("reg-drawer"));
+      WU.observer.observe($("reg-form"));
     }
   }
   document.addEventListener("visibilitychange", function () { if (document.hidden) stopCamera(); });
@@ -1938,17 +2022,17 @@
     if (SHOT) {
       setTier(tier.id);
       var rec = { name: NAME_PARAM, company: sd.company, tier: tier, size: "" };
-      if (parseInt(Q.get("q"), 10) === 7) { joinQueue(rec, { silent: true }); return; }
-      // ?shot=1&n=Name: the drawer's confirmed line under the wall, the figure at the back of the queue.
-      confirmReg(rec, { silent: true });
-      $("reg-drawer").hidden = false;
+      // ?shot=1&n=Name: the curtain call confirmed, the monitor showing Q7 lit. ?shot=1&q=7&n=Name adds
+      // the wall on Q7 (set after this, in init).
+      confirmReg(rec, { silent: true, liveMonitor: true });
       return;
     }
-    // ?n=Name: prefill the drawer's name fields and open it.
+    // ?n=Name: prefill the form's name fields and scroll to it. Does not submit.
     var n = splitName(NAME_PARAM);
     if ($("f-first")) $("f-first").value = n.first;
     if ($("f-last")) $("f-last").value = n.last;
-    openDrawer($("header-cta"));
+    // After the fonts settle, so the layout above doesn't move the target mid-scroll.
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function () { goToRegister(); });
   }
   function markShotReady() {
     if (!SHOT) return;
@@ -1983,7 +2067,7 @@
       if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
       renderChrome(); markOnWall();
-      wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases(); wireStage(); wireCurtain();
+      wireWall(); wireTabs(); wireMatrix(); wireRegister(); wireGlobal(); wirePhrases(); wireStage(); wireCurtain();
       startOpening();
       applyNameParam();
       // ?shot=1&q=7&n=Name: the registrant is already on the wall as Q7, empty photo state.

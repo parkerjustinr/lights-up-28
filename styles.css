@@ -513,80 +513,82 @@ html:not([data-shot]) .sec-phrases .ph-rec:hover { background: var(--paper); bor
 .ph-privacy { margin: 14px 0 0; font-size: 0.95rem; }
 .btn[disabled] { opacity: 0.6; cursor: default; }
 
-/* ---------- Registration drawer: a full-width ink field directly under the wall ---------- */
-.drawer { background: var(--ink); color: var(--paper); border-bottom: var(--rule); }
-.drawer-in { position: relative; padding: 16px var(--wall-pad) 20px; }
-.drawer :focus-visible { outline-color: var(--paper); }
-.drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
-.drawer-title { font-size: 1.6rem; font-stretch: 110%; }
-.drawer-x { appearance: none; background: transparent; border: 2px solid var(--paper); color: var(--paper); width: 40px; height: 40px; font-size: 1.5rem; line-height: 1; cursor: pointer; display: grid; place-items: center; padding: 0; }
-html:not([data-shot]) .drawer-x:hover { background: var(--paper); color: var(--ink); }
-.drawer:has(#drawer-done:not([hidden])) .drawer-head { position: absolute; right: var(--wall-pad); top: 10px; margin: 0; }
-.drawer:has(#drawer-done:not([hidden])) .drawer-title { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.drawer-form { display: grid; gap: 12px; }
-.dr-row { display: grid; gap: 12px; }
+/* ---------- Curtain call: the registration stage on a host band ---------- */
+/* "That's the show." over the form (left) and the program monitor (right), stacked on phones.
+   The cast stands on a 4px ink floor line under the whole band. Bow and run-in are tier 1. */
+.cc { background: var(--host); color: var(--on-host); padding: 56px 0 0; }
+.cc :focus-visible { outline-color: var(--ink); }
+.cc-head { margin-bottom: 28px; }
+.cc-title { font-size: clamp(2.6rem, 6.4vw, 5.25rem); font-stretch: 108%; line-height: 0.95; margin: 0 0 14px; }
+.cc-sub { font-family: var(--display); font-weight: 800; font-size: clamp(1.35rem, 2.6vw, 2rem); line-height: 1.1; margin: 0 0 10px; }
+.cc-free { font-weight: 700; font-size: 1.05rem; margin: 0 0 6px; }
+.cc-date { font-family: var(--mono); font-weight: 500; font-size: 1rem; margin: 0; }
+.cc-stage { display: grid; gap: 32px; align-items: start; }
+@media (min-width: 960px) { .cc-stage { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; } }
+.reg-form { display: grid; gap: 16px; }
+.rf-grid { display: grid; gap: 12px; }
+@media (min-width: 600px) { .rf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; } }
 .field { display: grid; gap: 4px; align-content: start; }
 .field label { font-weight: 700; font-size: 0.95rem; }
 .field input, .field select, .field textarea { font: inherit; color: var(--ink); background: #fff; border: 2px solid var(--ink); border-radius: var(--radius); padding: 9px 10px; min-height: 44px; width: 100%; }
-.drawer .field input, .drawer .field select { border-color: var(--paper); }
-.error { color: var(--paper); font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 8px; }
-.error::before { content: "!"; flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; background: var(--paper); color: var(--ink); font-size: 0.85em; }
+.error { color: var(--ink); font-weight: 700; font-size: 0.92rem; display: flex; align-items: center; gap: 8px; }
+.error::before { content: "!"; flex: 0 0 auto; display: inline-grid; place-items: center; width: 1.35em; height: 1.35em; border-radius: 50%; background: var(--ink); color: var(--paper); font-size: 0.85em; }
 .error:empty { display: none; }
-[aria-invalid="true"] { outline: 3px solid var(--paper); outline-offset: 2px; }
-.dr-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 24px; margin-top: 4px; }
-.dr-photo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
-.dr-thumb { width: 96px; height: 96px; overflow: hidden; background: var(--host); border: 2px solid var(--paper); display: grid; place-items: center; flex: 0 0 auto; }
-.dr-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.dr-thumb .qf { position: static; height: 64px; width: auto; aspect-ratio: 28 / 60; }
-/* Camera panel: a 4:5 live preview, mirrored like a selfie, in an ink frame (outlined so it shows on the ink drawer). */
+[aria-invalid="true"] { outline: 3px solid var(--ink); outline-offset: 2px; }
+.rf-photo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.rf-thumb { width: 96px; height: 96px; overflow: hidden; background: var(--host); border: 2px solid var(--ink); display: grid; place-items: center; flex: 0 0 auto; }
+.rf-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rf-thumb .qf { position: static; height: 64px; width: auto; aspect-ratio: 28 / 60; }
+/* Camera panel: a 4:5 live preview, mirrored like a selfie, in an ink frame. */
 .cam-panel { flex-basis: 100%; width: 100%; display: grid; gap: 10px; justify-items: start; margin-top: 4px; }
-@media (max-width: 759px) { .dr-photo { flex-basis: 100%; } }
-.cam-frame { position: relative; width: min(100%, 360px); aspect-ratio: 4 / 5; background: var(--ink); border: 6px solid var(--ink); outline: 2px solid var(--paper); outline-offset: 0; overflow: hidden; }
+.cam-frame { position: relative; width: min(100%, 360px); aspect-ratio: 4 / 5; background: var(--ink); border: 6px solid var(--ink); overflow: hidden; }
 .cam-video, .cam-shot { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
 .cam-video { transform: scaleX(-1); }
 .cam-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
-.cam-go { background: var(--host); border-color: var(--host); color: var(--ink); min-width: 120px; }
-html:not([data-shot]) .drawer .cam-go:hover { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+.cam-go { background: var(--ink); border-color: var(--ink); color: var(--paper); min-width: 120px; }
+html:not([data-shot]) .cc .cam-go:hover { background: var(--paper); border-color: var(--ink); color: var(--ink); }
 @media (min-width: 760px) { .cam-frame { width: 280px; } }
 .wu-status:empty { display: none; }
 .wu-status { margin: 0; font-weight: 700; flex-basis: 100%; }
-.dr-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-.dr-go { background: var(--host); border-color: var(--host); color: var(--ink); min-width: 160px; }
-html:not([data-shot]) .drawer .dr-go:hover { background: var(--paper); border-color: var(--paper); color: var(--ink); }
-.dr-demo { margin: 0; font-size: 0.92rem; font-weight: 700; }
-.drawer-done { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 24px; padding-right: 52px; min-height: 40px; }
-.drawer-done:focus { outline: none; }
-.drawer-done[hidden] { display: none; }
-.dr-done-line { margin: 0; font-family: var(--display); font-weight: 800; font-stretch: 105%; font-size: 1.35rem; }
-.dr-links { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0; }
+.rf-submit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.rf-go { min-width: 160px; }
+html:not([data-shot]) .cc .rf-go:hover { background: var(--paper); border-color: var(--ink); color: var(--ink); }
+.rf-demo { margin: 0; font-size: 0.92rem; font-weight: 700; }
+.reg-done { display: grid; gap: 8px; }
+.reg-done:focus { outline: none; }
+.rd-line { margin: 0; font-family: var(--display); font-weight: 800; font-stretch: 105%; font-size: clamp(1.6rem, 3vw, 2.4rem); line-height: 1.05; }
+.rd-links { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0; }
 .linkish { appearance: none; background: none; border: 0; padding: 4px 0; font: inherit; font-weight: 700; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 html:not([data-shot]) .linkish:hover { text-decoration-thickness: 3px; }
-@media (min-width: 760px) {
-  .dr-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
 
-/* ---------- the bottom Register band: slim, ink ---------- */
-/* Curtain call: a full-width host band, the cast at about 2.2x on an ink floor line. Bow is tier 1. */
-.cc { background: var(--host); color: var(--on-host); padding: 48px 0 24px; scroll-margin-top: calc(var(--bar) + 12px); }
-.cc-inner { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 28px 40px; border-bottom: 4px solid var(--ink); }
-.cc-copy { flex: 1 1 340px; min-width: 0; padding-bottom: 32px; }
-.cc-title { font-size: clamp(2.6rem, 6.4vw, 5.25rem); font-stretch: 108%; line-height: 0.95; margin: 0 0 14px; max-width: 14ch; }
-.cc-date { font-family: var(--mono); font-weight: 500; font-size: 1rem; margin: 0 0 20px; }
-.cc-save { background: none; border: 0; padding: 4px 0; font: 700 1.1rem var(--body); color: var(--ink); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; cursor: pointer; }
-.cc-cast { display: flex; align-items: flex-end; gap: 26px; padding: 92px 0 0; margin: 0 0 0 auto; }
+/* The program monitor: the wall's own markup at the wall's size, scaled to the screen (app.js monFit). */
+.mon-bezel { position: relative; background: var(--ink); color: var(--paper); padding: 34px 14px 14px; }
+.mon-label { position: absolute; left: 14px; top: 9px; margin: 0; font-family: var(--mono); font-weight: 500; font-size: 0.85rem; letter-spacing: 0.06em; line-height: 1; }
+.mon-screen { position: relative; overflow: hidden; background: var(--host); aspect-ratio: 1440 / 500; }
+.mon-screen[style*="height"] { aspect-ratio: auto; }
+.mon-scale { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.mon-foot { display: flex; align-items: center; gap: 12px; min-height: 0; }
+.mon-foot:has(.mon-go:not([hidden])) { padding-top: 12px; }
+.mon-go { width: 56px; height: 56px; font-size: 1.1rem; }
+.mon-go:focus-visible { outline-color: var(--paper); }
+.mon-go-label { font-family: var(--mono); font-weight: 500; font-size: 1rem; }
+
+/* The cast on the floor line under the whole band. */
+.cc-floor { margin-top: 40px; border-bottom: 4px solid var(--ink); }
+.cc-cast { display: flex; align-items: flex-end; justify-content: flex-end; gap: 26px; padding: 92px 0 0; margin: 0; }
 .cc-fig { display: block; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; color: inherit; }
 .cc-fig > * { display: block; transform-origin: 50% 100%; }
 .cc-fig:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
-.cc .qf { position: relative; left: auto; bottom: auto; height: calc(var(--h) * 2.2); width: auto; aspect-ratio: 28 / 60; }
-.cc .qf .cut { stroke: var(--host); }
-.cc .qf .cutfill { fill: var(--host); }
-.cc .qf-you .you-bubble { --b: 64px; padding: 4px; }
+.cc-cast .qf { position: relative; left: auto; bottom: auto; height: calc(var(--h) * 2.2); width: auto; aspect-ratio: 28 / 60; }
+.cc-cast .qf .cut { stroke: var(--host); }
+.cc-cast .qf .cutfill { fill: var(--host); }
+.cc-cast .qf-you .you-bubble { --b: 64px; padding: 4px; }
 @media (max-width: 719px) {
-  .cc { padding-top: 36px; padding-bottom: 16px; }
-  .cc-copy { padding-bottom: 0; }
-  .cc-cast { width: 100%; justify-content: center; gap: 8px; padding: 70px 0 0; }
-  .cc .qf { height: calc(var(--h) * 1.35); }
-  .cc .qf-you .you-bubble { --b: 44px; padding: 3px; }
+  .cc { padding-top: 40px; }
+  .cc-floor { margin-top: 28px; }
+  .cc-cast { justify-content: center; gap: 8px; padding: 70px 0 0; }
+  .cc-cast .qf { height: calc(var(--h) * 1.35); }
+  .cc-cast .qf-you .you-bubble { --b: 44px; padding: 3px; }
 }
 
 /* ---------- FAQ: big heading beside ruled rows ---------- */

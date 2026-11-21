@@ -842,22 +842,22 @@
       "min": 2,
       "max": 5
     },
-    "drawer": {
-      "title": "Register",
-      "close": "Close registration",
+    "form": {
+      "label": "Register",
       "submit": "Register",
-      "demo": "Demo only. Nothing is sent anywhere.",
-      "confirmed": "You're Q7. Press GO to walk on.",
-      "walkOn": "Walk on now",
-      "photoLabel": "Photo"
+      "demo": "Demo only. Nothing is sent anywhere."
     }
   },
   "curtain": {
     "title": "That's the show.",
-    "registered": "See you in Quito, {first}.",
+    "sub": "Want in? Register and walk on as Q7.",
+    "free": "Free for Tarnell customers. Travel and hotel are on you.",
+    "confirmed": "You're Q7. See you in Quito, {first}.",
+    "monitor": "Program monitor",
+    "program": "PROGRAM",
+    "walkOn": "Walk on",
     "bow": "Take a bow",
-    "cast": "The cast",
-    "cta": "Register"
+    "cast": "The cast"
   },
   "faq": {
     "heading": "FAQ",
