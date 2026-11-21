@@ -701,6 +701,8 @@
   },
   "phrases": {
     "heading": "Say it in Quito",
+    "label": "Learn your lines.",
+    "prompter": "PROMPTER",
     "items": [
       {
         "es": "No sea malito.",

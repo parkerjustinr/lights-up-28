@@ -997,13 +997,16 @@
     var ph = D.phrases, book = phBook();
     return '<section class="section sec-phrases' + (book ? " is-book" : "") + '" id="phrases" aria-labelledby="phrases-title"><div class="wrap">' +
       '<h2 class="section-title" id="phrases-title">' + esc(ph.heading) + "</h2>" +
-      // The phrase on a paper cue card: counter and arrows in the top corner.
-      '<div class="ph-card" id="ph-card">' +
-        '<div class="ph-top"><p class="ph-count" id="ph-count"></p>' +
+      '<p class="ph-label">' + esc(ph.label) + "</p>" +
+      // The teleprompter: an ink screen with a host reading line, in an ink bezel carrying the counter and arrows.
+      '<div class="prompter" id="ph-card">' +
+        '<div class="pr-bezel"><p class="pr-name" aria-hidden="true">' + esc(ph.prompter) + "</p>" +
+          '<div class="ph-top"><p class="ph-count" id="ph-count"></p>' +
           '<button type="button" class="ph-arrow" id="ph-prev" aria-label="' + esc(ph.prev) + '"><span aria-hidden="true">&larr;</span></button>' +
-          '<button type="button" class="ph-arrow" id="ph-next" aria-label="' + esc(ph.next) + '"><span aria-hidden="true">&rarr;</span></button></div>' +
-        '<div class="ph-body" id="ph-body" aria-live="polite"></div>' +
+          '<button type="button" class="ph-arrow" id="ph-next" aria-label="' + esc(ph.next) + '"><span aria-hidden="true">&rarr;</span></button></div></div>' +
+        '<div class="pr-screen" id="ph-screen"><span class="pr-line" aria-hidden="true"></span><p class="ph-es" id="ph-es" lang="es"></p></div>' +
       "</div>" +
+      '<div class="ph-body" id="ph-body" aria-live="polite"></div>' +
       (book ? "" :
         '<ol class="ph-steps" id="ph-steps">' + ph.steps.map(function (t, k) { return '<li data-step="' + (k + 1) + '">' + (k + 1) + " " + esc(t) + "</li>"; }).join("") + "</ol>" +
         '<div class="ph-actions"><button type="button" class="btn btn-small ph-listen" id="ph-listen" hidden>' + esc(ph.listen) + "</button>" +
@@ -1014,7 +1017,7 @@
     "</div></section>";
   };
   var PH = { i: 0, voice: null, busy: false, rec: null, stream: null, timer: null, recordOnly: {}, audio: null };
-  // A 0.05s silent WAV, played inside a tap to unlock audio playback on iOS.
+  // A 0.05s silent WAV, played inside a tap to allow audio playback on iOS.
   var SILENT_WAV = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQQAAACAgICA";
   function phNorm(t) {
     return String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
@@ -1028,9 +1031,47 @@
     $("ph-count").textContent = two(PH.i + 1) + " / " + two(ph.items.length);
     // The stressed syllable is the capitalized one: bold it.
     var say = item.say.split(" ").map(function (w) { return '<span class="nw">' + esc(w).replace(/[A-ZÁÉÍÓÚÑ]{2,}/g, "<b>$&</b>") + "</span>"; }).join(" ");
-    $("ph-body").innerHTML = '<p class="ph-es" lang="es">' + esc(item.es) + '</p><p class="ph-en">' + esc(item.en) + '</p><p class="ph-say">' + say + "</p>";
+    // The phrase on the prompter, one span per word: dimmed until spoken or heard.
+    $("ph-es").innerHTML = item.es.split(/\s+/).map(function (w, k) { return '<span class="pw" data-w="' + k + '">' + esc(w) + "</span>"; }).join(" ");
+    $("ph-es").setAttribute("aria-label", item.es);
+    $("ph-body").innerHTML = '<p class="ph-en">' + esc(item.en) + '</p><p class="ph-say">' + say + "</p>";
     if ($("ph-result")) $("ph-result").innerHTML = "";
     phStep(1);
+  }
+  // Word highlighting (tier 1): words up to n are full paper; `now` (the word being spoken) also gets
+  // a host underline. n = -1 dims every word.
+  function phLight(n, now) {
+    Array.prototype.forEach.call(document.querySelectorAll("#ph-es .pw"), function (el, k) {
+      el.classList.toggle("on", k <= n);
+      el.classList.toggle("now", k === now);
+    });
+  }
+  function phLightSet(marks) {
+    Array.prototype.forEach.call(document.querySelectorAll("#ph-es .pw"), function (el, k) {
+      el.classList.toggle("on", !!marks[k]);
+      el.classList.remove("now");
+    });
+  }
+  // Word k of the phrase that a speech boundary at charIndex falls in.
+  function phWordAt(text, ci) {
+    var words = text.split(/\s+/), pos = 0;
+    for (var k = 0; k < words.length; k++) {
+      var start = text.indexOf(words[k], pos), end = start + words[k].length;
+      if (ci < end) return k;
+      pos = end;
+    }
+    return words.length - 1;
+  }
+  // Heard words matched in order against the phrase: each phrase word takes the next heard word that
+  // matches it (or one of its accepted spellings).
+  function phMatchLive(heard) {
+    var item = D.phrases.items[PH.i], want = phWords(item.es), got = phWords(heard), alt = item.accept || {}, j = 0;
+    return want.map(function (w) {
+      for (var q = j; q < got.length; q++) {
+        if (got[q] === w || (alt[w] || []).indexOf(got[q]) > -1) { j = q + 1; return true; }
+      }
+      return false;
+    });
   }
   // The three-step strip: the current step is bold paper, the others dimmed.
   function phStep(n) {
@@ -1070,9 +1111,22 @@
     if (PH.voice) { try { u.voice = PH.voice; } catch (e) { /* lang below still picks Spanish */ } u.lang = PH.voice.lang; }
     else u.lang = "es-ES";
     u.rate = 0.85;
-    var started = false, finished = false;
-    function end() { if (finished) return; finished = true; if (opts.done) opts.done(started); }
-    u.onstart = function () { started = true; };
+    var started = false, finished = false, bounded = false, even = [];
+    var n = text.split(/\s+/).length;
+    function end() { if (finished) return; finished = true; even.forEach(clearTimeout); if (opts.done) opts.done(started); }
+    u.onstart = function () {
+      started = true;
+      if (!opts.words) return;
+      opts.words(0);
+      // No boundary events from this voice: time the words evenly across the estimated length.
+      var per = Math.max(260, (text.length * 75) / 0.85 / n);
+      for (var k = 1; k < n; k++) (function (k) { even.push(setTimeout(function () { if (!bounded && !finished) opts.words(k); }, per * k)); })(k);
+    };
+    u.onboundary = function (e) {
+      if (!opts.words || (e.name && e.name !== "word")) return;
+      if (!bounded) { bounded = true; even.forEach(clearTimeout); }
+      opts.words(phWordAt(text, e.charIndex || 0));
+    };
     u.onend = end;
     u.onerror = end;
     window.speechSynthesis.speak(u);
@@ -1092,7 +1146,11 @@
     syn.cancel();
     function go() {
       PH.voice = phPickVoice();
-      phUtter(text, { done: function (started) { if (!started) $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noVoice) + "</p>"; } });
+      phLight(-1);
+      phUtter(text, {
+        words: function (k) { phLight(k, k); },
+        done: function (started) { if (started) phLight(99); else $("ph-result").innerHTML = '<p class="ph-msg">' + esc(ph.noVoice) + "</p>"; }
+      });
     }
     if ((syn.getVoices() || []).length) { go(); return; }
     var fired = false;
@@ -1100,8 +1158,8 @@
     if (syn.addEventListener) syn.addEventListener("voiceschanged", onVoices);
     setTimeout(onVoices, 1000);
   }
-  // Inside a tap: unlock audio playback and speech for later, async use (iOS needs both started by a gesture).
-  function phUnlockAudio() {
+  // Inside a tap: allow audio playback and speech for later, async use (iOS needs both started by a gesture).
+  function phPrimeAudio() {
     try {
       PH.audio = document.createElement("audio");
       PH.audio.setAttribute("playsinline", "");
@@ -1133,6 +1191,7 @@
       : best.n * 2 >= want.length ? esc(ph.close) + " " + esc(missed.join(" ")) + ' <span class="ph-say-inline">(' + esc(missedSay.join(" ")) + ")</span>"
       : esc(ph.again);
     $("ph-result").innerHTML = '<p class="ph-heard">' + esc(ph.heard) + " " + esc(best.t) + '</p><p class="ph-words" lang="es">' + words + '</p><p class="ph-msg">' + msg + "</p>";
+    phLightSet(best.marks);
   }
   // Listening: keep every final and interim result until "I'm done" or 10 seconds, then grade once.
   // A 5-bar meter follows the input level only. Every mic track stops when a try ends.
@@ -1191,12 +1250,13 @@
   function phStartTry() {
     var ph = D.phrases, SR = window.SpeechRecognition || window.webkitSpeechRecognition, useSR = phUseSR();
     PH.busy = true;
-    // Inside the tap: the audio context for the meter, and audio/speech unlocked for later playback.
+    // Inside the tap: the audio context for the meter, and audio and speech allowed for later playback.
     var AC = window.AudioContext || window.webkitAudioContext;
     if (AC && !PH.ac) { try { PH.ac = new AC(); } catch (e) { PH.ac = null; } }
-    if (!useSR) phUnlockAudio();
+    if (!useSR) phPrimeAudio();
     $("ph-try").textContent = ph.done;
     phStep(2);
+    phLight(-1);
     $("ph-result").innerHTML = '<p class="ph-msg ph-live">' + esc(ph.listening) + "</p>";
     // Ask for the mic first, inside the tap, so the permission prompt appears.
     if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
@@ -1232,6 +1292,8 @@
         }
         PH.heardAll = all.join(" ").replace(/\s+/g, " ").trim();
         PH.heardFinal = fin.join(" ").replace(/\s+/g, " ").trim();
+        // Karaoke: words light as they're heard, interim results included.
+        phLightSet(phMatchLive(PH.heardAll));
       };
       rec.onerror = function (e) {
         var code = e && e.error;
@@ -1302,6 +1364,15 @@
     phRender();
     $("ph-prev").addEventListener("click", function () { phStopMic(); PH.i = (PH.i - 1 + ph.items.length) % ph.items.length; phRender(); label(); });
     $("ph-next").addEventListener("click", function () { phStopMic(); PH.i = (PH.i + 1) % ph.items.length; phRender(); label(); });
+    // Swipe the prompter left or right to change phrases (phones and touch screens).
+    var sx = null, sy = 0;
+    $("ph-screen").addEventListener("touchstart", function (e) { var t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
+    $("ph-screen").addEventListener("touchend", function (e) {
+      if (sx === null) return;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      sx = null;
+      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) $(dx < 0 ? "ph-next" : "ph-prev").click();
+    }, { passive: true });
     if (!$("ph-try")) return; // phones: phrasebook only
     $("ph-listen").addEventListener("click", phListen);
     $("ph-try").addEventListener("click", phTry);

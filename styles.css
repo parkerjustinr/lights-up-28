@@ -510,42 +510,52 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .ruled dd { max-width: 62ch; }
 @media (min-width: 880px) { .venue-layout { grid-template-columns: 5fr 7fr; gap: 40px; } }
 
-/* ---------- Say it in Quito: an ink field, the phrase on a paper cue card ---------- */
-.sec-phrases { background: var(--ink); color: var(--paper); }
-.sec-phrases :focus-visible { outline-color: var(--paper); }
-.ph-card { background: var(--paper); color: var(--ink); padding: 18px 20px 24px; max-width: 980px; }
-.ph-card :focus-visible { outline-color: var(--ink); }
-.ph-top { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
+/* ---------- Say it in Quito: a teleprompter on paper ---------- */
+/* An ink screen with a thin host reading line across the middle, in an ink bezel carrying PROMPTER,
+   the counter and the arrows. The phrase sits on the line in dimmed paper (38%, 3.3:1 at this size);
+   each word turns full paper as it's spoken (Listen) or heard (Record), the spoken one underlined in
+   host. Meaning and respelling sit under the screen. Word highlighting is tier 1. */
+.ph-label { font-family: var(--mono); font-weight: 500; font-size: 1.05rem; margin: -10px 0 22px; }
+.prompter { background: var(--ink); color: var(--paper); padding: 0 14px 14px; max-width: 980px; }
+.prompter :focus-visible { outline-color: var(--paper); }
+.pr-bezel { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
+.pr-name { margin: 0; font-family: var(--mono); font-weight: 500; font-size: 0.85rem; letter-spacing: 0.06em; }
+.ph-top { display: flex; align-items: center; gap: 8px; }
 .ph-count { margin: 0 6px 0 0; font-family: var(--mono); font-weight: 500; font-size: 1.05rem; }
-.ph-arrow { -webkit-tap-highlight-color: transparent; appearance: none; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; font: 700 1.3rem/1 var(--body); color: var(--ink); background: transparent; border: 2px solid var(--ink); cursor: pointer; transition: background-color 120ms ease, color 120ms ease; }
-html:not([data-shot]) .ph-arrow:hover { background: var(--ink); color: var(--paper); }
+.ph-arrow { -webkit-tap-highlight-color: transparent; appearance: none; width: 44px; height: 44px; display: grid; place-items: center; padding: 0; font: 700 1.3rem/1 var(--body); color: var(--paper); background: transparent; border: 2px solid var(--paper); cursor: pointer; transition: background-color 120ms ease, color 120ms ease; }
+html:not([data-shot]) .ph-arrow:hover { background: var(--paper); color: var(--ink); }
 .ph-arrow:active { transform: translateY(1px); }
-.ph-es { font-family: var(--display); font-weight: 800; font-stretch: 105%; font-size: clamp(2.2rem, 6.2vw, 5.5rem); line-height: 0.98; letter-spacing: -0.01em; margin: 0 0 16px; text-wrap: balance; overflow-wrap: break-word; hyphens: none; }
+.pr-screen { position: relative; display: flex; align-items: center; min-height: clamp(220px, 30vw, 330px); padding: 24px 22px; border: 2px solid var(--ink-line); overflow: hidden; touch-action: pan-y; }
+.pr-line { position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: var(--host); }
+.ph-es { position: relative; margin: 0; font-family: var(--display); font-weight: 800; font-stretch: 105%; font-size: clamp(2.2rem, 6.2vw, 5.5rem); line-height: 1.02; letter-spacing: -0.01em; text-wrap: balance; overflow-wrap: break-word; hyphens: none; }
+.pw { color: color-mix(in srgb, var(--paper) 38%, var(--ink)); text-decoration: underline transparent; text-decoration-thickness: 0.07em; text-underline-offset: 0.12em; }
+.pw.on { color: var(--paper); }
+.pw.now { text-decoration-color: var(--host); }
+.is-book .pw { color: var(--paper); }
+.ph-body { margin-top: 16px; max-width: 980px; }
 .ph-en { font-size: 1.2rem; margin: 0 0 8px; max-width: 52ch; }
 .ph-say { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0; }
 .ph-say b { font-weight: 700; }
 .ph-say .nw { white-space: nowrap; }
-/* The three steps: the current one bold paper, the others dimmed (still 4.5:1 on ink). */
-.ph-steps { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 18px 0 0; font-family: var(--mono); font-weight: 500; font-size: 1rem; color: var(--dim-on-ink); }
-.ph-steps li.is-on { color: var(--paper); font-weight: 700; }
+/* The three steps: the current one bold ink, the others muted. */
+.ph-steps { display: flex; flex-wrap: wrap; gap: 6px 26px; margin: 22px 0 0; font-family: var(--mono); font-weight: 500; font-size: 1rem; color: var(--muted); }
+.ph-steps li.is-on { color: var(--ink); font-weight: 700; }
 .ph-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
-.sec-phrases .ph-listen { color: var(--paper); border-color: var(--paper); background: transparent; }
-html:not([data-shot]) .sec-phrases .ph-listen:hover { background: var(--paper); color: var(--ink); }
-.sec-phrases .ph-rec { background: var(--host); border-color: var(--host); color: var(--ink); min-width: 120px; }
-html:not([data-shot]) .sec-phrases .ph-rec:hover { background: var(--paper); border-color: var(--paper); color: var(--ink); }
+.sec-phrases .ph-rec { background: var(--host); border-color: var(--ink); color: var(--ink); min-width: 120px; }
+html:not([data-shot]) .sec-phrases .ph-rec:hover { background: var(--ink); color: var(--paper); }
 .ph-meter { display: inline-flex; align-items: flex-end; gap: 3px; height: 26px; align-self: center; }
-.ph-meter i { width: 6px; border: 1.5px solid var(--paper); background: transparent; }
+.ph-meter i { width: 6px; border: 1.5px solid var(--ink); background: transparent; }
 .ph-meter i:nth-child(1) { height: 30%; } .ph-meter i:nth-child(2) { height: 45%; } .ph-meter i:nth-child(3) { height: 62%; }
 .ph-meter i:nth-child(4) { height: 80%; } .ph-meter i:nth-child(5) { height: 100%; }
-.ph-meter i.on { background: var(--paper); }
+.ph-meter i.on { background: var(--ink); }
 .ph-result:empty { display: none; }
 .ph-result { margin-top: 16px; max-width: 980px; }
 .ph-result p { margin: 0 0 10px; }
 .ph-heard { font-family: var(--mono); font-weight: 500; }
 .ph-words { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--display); font-weight: 800; font-size: 1.5rem; line-height: 1.2; }
-.ph-w { padding: 4px 10px; border: 2px solid var(--paper); }
-.ph-w.is-hit { background: var(--paper); color: var(--ink); }
-.ph-w.is-miss { background: transparent; color: var(--paper); }
+.ph-w { padding: 4px 10px; border: 2px solid var(--ink); }
+.ph-w.is-hit { background: var(--ink); color: var(--paper); }
+.ph-w.is-miss { background: transparent; color: var(--ink); }
 .ph-msg { font-weight: 700; }
 .ph-say-inline { font-family: var(--mono); font-weight: 500; }
 .ph-privacy { margin: 14px 0 0; font-size: 0.95rem; }
