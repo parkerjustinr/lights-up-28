@@ -653,10 +653,20 @@
   "venue": {
     "heading": "Getting there",
     "intro": "Nave Carolina is in Iñaquito, Quito, a short walk from La Carolina Metro station.",
-    "equator": {
-      "lineLabel": "0° Equator",
-      "dotLabel": "Nave Carolina · 0° 11′ S · 2,850 m up",
-      "text": "About 21 km south of the equator."
+    "map": {
+      "title": "Metro map. Quito Metro Line 1 runs 15 stations, all underground, from Quitumbe at the south end to El Labrador at the north end. Nave Carolina is at La Carolina station, 0° 11′ S, 2,850 m up. The equator is about 21 km north of the venue. The Metro doesn't reach the airport: the Tarnell shuttle runs from the venue to UIO in Tababela.",
+      "south": "Quitumbe",
+      "southLabel": "South end",
+      "north": "El Labrador",
+      "northLabel": "North end",
+      "stations": 15,
+      "venueStation": 12,
+      "flag": "Nave Carolina · La Carolina station",
+      "venueLabel": "0° 11′ S · 2,850 m up",
+      "caption": "Line 1 · 15 stations · 22.6 km, all underground",
+      "equator": "0° Equator · about 21 km north of the venue",
+      "airport": "UIO · Tababela",
+      "shuttle": "Tarnell shuttle"
     },
     "feature": {
       "title": "Tarnell shuttle",
@@ -861,8 +871,8 @@
         "q": "How do I deal with the altitude?",
         "a": "Plan an easy first day and drink water, since the hall sits high up, as shown on",
         "link": {
-          "href": "#equator",
-          "label": "the equator strip in Getting there"
+          "href": "#metro-map",
+          "label": "the Metro map in Getting there"
         }
       }
     ]

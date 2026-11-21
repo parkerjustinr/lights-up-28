@@ -10,7 +10,7 @@
   --host-deep: #F0B000;    /* the big cue numeral behind the wall name only */
   --paper: #F7F5EF;        /* page background */
   --ink: #101218;          /* text, the Register button, the Register section, dark blocks */
-  --booth: #D6E4F0;        /* sky: The Booth, the equator block */
+  --booth: #D6E4F0;        /* sky: The Booth, the Metro map field */
   --lab: #E9DFC6;          /* sand: the Lab */
   --standby: #E5322D;      /* standby lamp only */
   --go: #18B868;           /* GO ring only */
@@ -447,15 +447,26 @@ th.is-sel .m-pick { background: var(--host); color: var(--on-host); border-color
 .sponsor-list img { max-height: 48px; width: auto; }
 .wordmark { font-family: var(--display); font-weight: 800; font-size: 1.4rem; }
 
-/* ---------- Getting there: the equator strip, a slim sky band above the transit rows ---------- */
-.eq-strip { background: var(--booth); padding: 14px 16px 16px; margin: 0 0 28px; scroll-margin-top: calc(var(--bar) + 12px); }
-.eq-map { margin: 0 0 10px; padding-top: 22px; }
-.eq-line { margin: 0; border-top: 2px solid var(--ink); position: relative; }
-.eq-line span { position: absolute; left: 0; bottom: 5px; font-family: var(--mono); font-weight: 500; font-size: 0.9rem; }
-.eq-dot { margin: 0; padding: 18px 0 0 12%; display: flex; align-items: center; gap: 10px; font-family: var(--mono); font-weight: 500; font-size: 0.9rem; }
-.eq-dot .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--ink); flex: 0 0 auto; }
-.eq-text { margin: 0; font-weight: 700; }
-@media (max-width: 479px) { .eq-dot { padding-left: 0; } }
+/* ---------- Getting there: the Metro map above the transit rows ---------- */
+/* Metro map: flat ink lines on a sky field. Horizontal from 960px, vertical (north up) on phones and tablets, so map text never drops under 11px. */
+.metro { background: var(--booth); margin: 0 0 28px; padding: 20px 16px 16px; scroll-margin-top: calc(var(--bar) + 12px); }
+.metro-svg { display: block; width: 100%; height: auto; max-width: 1000px; overflow: visible; }
+.metro-svg.is-v { display: none; max-width: 360px; }
+@media (max-width: 959px) { .metro-svg.is-h { display: none; } .metro-svg.is-v { display: block; } }
+.metro-svg text { fill: var(--ink); }
+.mm-b { font: 700 16px var(--body); }
+.mm-m { font: 500 14px var(--mono); }
+.mm-fb { font: 700 16px var(--body); fill: var(--paper) !important; }
+.mm-fm { font: 500 14px var(--mono); fill: var(--paper) !important; }
+.mm-line { stroke: var(--ink); stroke-width: 6; }
+.mm-tick { stroke: var(--ink); stroke-width: 3; }
+.mm-pole { stroke: var(--ink); stroke-width: 2; }
+.mm-dash { stroke: var(--ink); stroke-width: 2.5; stroke-dasharray: 8 6; }
+.mm-end { fill: var(--paper); stroke: var(--ink); stroke-width: 4; }
+.mm-node { fill: var(--ink); }
+.mm-flag { fill: var(--ink); }
+.mm-venue { fill: var(--host); stroke: var(--ink); stroke-width: 3; }
+.metro-cap { margin: 10px 0 0; font-family: var(--mono); font-weight: 500; font-size: 0.9rem; }
 
 /* ---------- Getting there: the shuttle as one ink block beside a ruled list ---------- */
 .venue-layout { display: grid; gap: 28px; }

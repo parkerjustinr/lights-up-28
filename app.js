@@ -769,15 +769,58 @@
     var v = D.venue, f = v.feature;
     return sectionShell("venue", v.heading,
       (v.intro ? '<p class="lede">' + copy(v.intro) + "</p>" : "") +
-      // Equator strip: a thin line for the equator, a dot for the hall just below it, one line of text.
-      (v.equator ? '<div class="eq-strip" id="equator"><div class="eq-map"><p class="eq-line"><span>' + esc(v.equator.lineLabel) + "</span></p>" +
-        '<p class="eq-dot"><span class="dot" aria-hidden="true"></span>' + esc(v.equator.dotLabel) + "</p></div>" +
-        '<p class="eq-text">' + copy(v.equator.text) + "</p></div>" : "") +
+      // Metro map: Line 1 as flat ink lines, the venue as a host dot, the equator and the shuttle dashed.
+      (v.map ? '<figure class="metro" id="metro-map">' + metroSvg(v.map, false) + metroSvg(v.map, true) +
+        '<figcaption class="metro-cap">' + esc(v.map.caption) + "</figcaption></figure>" : "") +
       '<div class="venue-layout">' +
       (f ? '<div class="venue-feature">' + '<h3>' + esc(f.title) + (f.tag ? ' <span class="venue-tag">' + esc(f.tag) + "</span>" : "") + "</h3><p>" + copy(f.body) + "</p></div>" : "") +
       '<dl class="ruled">' + v.items.map(function (x) { return "<div><dt>" + esc(x.title) + "</dt><dd>" + copy(x.body) + "</dd></div>"; }).join("") + "</dl></div>" +
       (v.mapLink ? '<a class="btn btn-small" href="' + esc(v.mapLink) + '">Open in maps</a>' : ""));
   };
+
+  // Metro map SVG. Desktop: horizontal, north to the right (east is down). Phones: vertical, north
+  // at the top (east is right). Stations sit evenly spaced; only La Carolina is named.
+  function metroSvg(m, vert) {
+    var n = m.stations, vi = m.venueStation - 1, out = [], eq = m.equator.split(" · ");
+    function t(x, y, str, cls, anchor) { return '<text x="' + x + '" y="' + y + '" class="' + cls + '"' + (anchor ? ' text-anchor="' + anchor + '"' : "") + ">" + esc(str) + "</text>"; }
+    function ln(x1, y1, x2, y2, cls) { return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" class="' + cls + '"/>'; }
+    var W, H, P = [], i;
+    if (!vert) {
+      W = 1000; H = 290;
+      for (i = 0; i < n; i++) P.push([50 + i * 50, 150]);
+      var vx = P[vi][0], end = P[n - 1][0];
+      out.push(ln(950, 16, 950, 274, "mm-dash"), t(936, 36, eq[0], "mm-b", "end"), t(936, 56, eq[1] || "", "mm-m", "end"));
+      out.push(ln(vx, 150, 680, 250, "mm-dash"), t(640, 222, m.shuttle, "mm-m", "end"));
+      out.push(ln(P[0][0], 150, end, 150, "mm-line"));
+      for (i = 1; i < n - 1; i++) if (i !== vi) out.push(ln(P[i][0], 136, P[i][0], 150, "mm-tick"));
+      out.push('<rect x="672" y="242" width="16" height="16" class="mm-node"/>', t(698, 256, m.airport, "mm-b", "start"));
+      out.push('<circle cx="' + P[0][0] + '" cy="150" r="8" class="mm-end"/>', '<circle cx="' + end + '" cy="150" r="8" class="mm-end"/>');
+      out.push(t(P[0][0] - 8, 186, m.south, "mm-b", "start"), t(P[0][0] - 8, 206, m.southLabel, "mm-m", "start"));
+      out.push(t(end, 186, m.north, "mm-b", "middle"), t(end, 206, m.northLabel, "mm-m", "middle"));
+      out.push(ln(vx, 92, vx, 150, "mm-pole"), '<rect x="' + (vx - 344) + '" y="30" width="344" height="62" class="mm-flag"/>',
+        t(vx - 330, 56, m.flag, "mm-fb", "start"), t(vx - 330, 80, m.venueLabel, "mm-fm", "start"));
+      out.push('<circle cx="' + vx + '" cy="150" r="13" class="mm-venue"/>');
+    } else {
+      W = 360; H = 620;
+      for (i = 0; i < n; i++) P.push([60, 580 - i * 30]);
+      var vy = P[vi][1], top = P[n - 1][1];
+      out.push(ln(16, 84, 344, 84, "mm-dash"), t(16, 44, eq[0], "mm-b"), t(16, 66, eq[1] || "", "mm-m"));
+      out.push(ln(60, vy, 300, vy - 14, "mm-dash"), t(92, vy - 22, m.shuttle, "mm-m"));
+      out.push(ln(60, P[0][1], 60, top, "mm-line"));
+      for (i = 1; i < n - 1; i++) if (i !== vi) out.push(ln(46, P[i][1], 60, P[i][1], "mm-tick"));
+      out.push('<rect x="292" y="' + (vy - 22) + '" width="16" height="16" class="mm-node"/>', t(344, vy - 34, m.airport, "mm-b", "end"));
+      out.push('<circle cx="60" cy="' + P[0][1] + '" r="8" class="mm-end"/>', '<circle cx="60" cy="' + top + '" r="8" class="mm-end"/>');
+      out.push(t(80, P[0][1] + 5, m.south, "mm-b"), t(80, P[0][1] + 25, m.southLabel, "mm-m"));
+      out.push(t(80, top + 5, m.north, "mm-b"), t(80, top + 25, m.northLabel, "mm-m"));
+      var fl = m.flag.split(" · ");
+      out.push(ln(60, vy, 84, vy + 28, "mm-pole"), '<rect x="84" y="' + (vy + 22) + '" width="236" height="84" class="mm-flag"/>',
+        t(98, vy + 46, fl[0], "mm-fb"), t(98, vy + 68, fl[1] || "", "mm-fm"), t(98, vy + 92, m.venueLabel, "mm-fm"));
+      out.push('<circle cx="60" cy="' + vy + '" r="13" class="mm-venue"/>');
+    }
+    var id = "mm-title-" + (vert ? "v" : "h");
+    return '<svg class="metro-svg ' + (vert ? "is-v" : "is-h") + '" viewBox="0 0 ' + W + " " + H + '" role="img" aria-labelledby="' + id + '" preserveAspectRatio="xMinYMin meet">' +
+      '<title id="' + id + '">' + esc(m.title) + "</title>" + out.join("") + "</svg>";
+  }
 
   // ---------- Say it in Quito: one phrase card at a time ----------
   // Phones (and browsers that can't speak or listen) get a plain phrasebook: no Listen, no Try it.
