@@ -96,10 +96,10 @@
     }
   },
   "about": {
-    "heading": "Six keynotes. Six customers. You call the cues.",
-    "paragraphs": [
-      "Lights Up '28 is Tarnell's free customer conference, and every main-stage keynote is given by a customer who runs something live."
-    ]
+    "heading": "Lights Up",
+    "lines": ["LIGHTS", "UP"],
+    "line": "Six keynotes. Six customers. You call the cues.",
+    "description": "Lights Up '28 is Tarnell's free customer conference, and every main-stage keynote is given by a customer who runs something live."
   },
   "tracks": [
     {
