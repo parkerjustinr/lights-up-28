@@ -1224,11 +1224,11 @@
       t.setAttribute("aria-controls", "reg-drawer"); t.setAttribute("aria-expanded", String(on));
     });
   }
-  // Height of what sticks to the top: the try banner (if shown) plus the nav bar. Not in ?shot=1.
+  // Height of what sticks to the top: the nav bar. Not in ?shot=1.
   function stickyTop() {
     if (SHOT) return 0;
-    var header = document.querySelector(".site-header"), bar = $("try-bar");
-    return (header ? header.getBoundingClientRect().height : 0) + (bar && !bar.hidden ? bar.getBoundingClientRect().height : 0);
+    var header = document.querySelector(".site-header");
+    return header ? header.getBoundingClientRect().height : 0;
   }
   // Scroll so the wall's floor line and the drawer are both in view.
   function scrollToDrawer(instant) {
@@ -1564,39 +1564,6 @@
     });
   }
 
-  // ---------- "Two things to try" banner: sticks above the nav; hidden for the session by its X ----------
-  var TRY_KEY = "try-bar:closed";
-  function setTryHeight() {
-    var bar = $("try-bar"), h = bar && !bar.hidden ? Math.round(bar.getBoundingClientRect().height) : 0;
-    root.style.setProperty("--try-h", h + "px");
-  }
-  function renderTryBar() {
-    var t = D.tryBar, closed = false;
-    if (!t || SHOT) return;
-    try { closed = window.sessionStorage.getItem(TRY_KEY) === "1"; } catch (e) { closed = false; }
-    if (closed) return;
-    var items = t.items.map(function (x) {
-      return '<a class="try-link" href="' + esc(x.href) + '"' + (x.href === "#register" ? " data-reg-open" : "") + '><span class="try-n" aria-hidden="true">' + esc(x.n) + "</span>" +
-        '<span class="try-long">' + esc(x.text) + '</span><span class="try-short">' + esc(x.short) + '</span> <span aria-hidden="true">&rarr;</span></a>';
-    }).join("");
-    document.querySelector(".site-header").insertAdjacentHTML("beforebegin",
-      '<aside class="try-bar" id="try-bar" aria-label="' + esc(t.label) + '"><div class="try-in">' +
-        '<p class="try-lead"><span class="try-long">' + esc(t.lead) + '</span><span class="try-short">' + esc(t.leadShort) + "</span></p>" +
-        '<div class="try-items">' + items + "</div>" +
-        '<button type="button" class="try-x" id="try-x" aria-label="' + esc(t.close) + '"><span aria-hidden="true">&times;</span></button>' +
-      "</div></aside>");
-    setTryHeight();
-    window.addEventListener("resize", setTryHeight);
-    $("try-x").addEventListener("click", function () {
-      try { window.sessionStorage.setItem(TRY_KEY, "1"); } catch (e) { /* hidden for this page view only */ }
-      $("try-bar").hidden = true;
-      setTryHeight();
-      // Focus moves to the nav (the first nav link; on phones, where the nav is hidden, the wordmark).
-      var first = document.querySelector("#nav a");
-      (first && first.offsetParent ? first : $("brand")).focus();
-    });
-  }
-
   function renderChrome() {
     var m = D.meta, on = D.sections.filter(function (s) { return s.on && R[s.id]; });
     document.title = m.pageTitle || m.name;
@@ -1783,7 +1750,6 @@
       if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
       renderChrome();
-      renderTryBar();
       wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases();
       startEntrance();
       applyNameParam();
