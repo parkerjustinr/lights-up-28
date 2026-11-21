@@ -335,9 +335,10 @@
   // The wall starts as flat ink with the floor line and cue strip showing. At 250ms it powers on like
   // a screen (a paper line across the middle opens to full height, about 450ms), then the five waiting
   // figures walk in from the left (600ms). Text never animates. Any press skips to the end state.
+  // `delay` holds the ink state longer: the opening overlay lifts first.
   var ENT = { on: false, timers: [], anims: [] };
-  function startEntrance() {
-    var wall = $("wall"), floor = wall && wall.querySelector(".stage-floor");
+  function startEntrance(delay) {
+    var wall = $("wall"), floor = wall && wall.querySelector(".stage-floor"), d = delay || 0;
     if (!wall || !floor || SHOT || !document.body.animate) return;
     ENT.on = true;
     wall.insertAdjacentHTML("beforeend", '<div class="power" id="power" aria-hidden="true"><i class="pw-top"></i><i class="pw-bot"></i><span class="pw-line"></span></div>');
@@ -349,7 +350,7 @@
       ["pw-top", "pw-bot"].forEach(function (c) {
         ENT.anims.push(pw.querySelector("." + c).animate([{ transform: "scaleY(1)" }, { transform: "scaleY(0)" }], { duration: 380, delay: 70, easing: ease, fill: "forwards" }));
       });
-    }, 250));
+    }, 250 + d));
     ENT.timers.push(setTimeout(function () {
       if (pw.parentNode) pw.remove();
       var g = qGeom();
@@ -360,8 +361,70 @@
         move(f, g.enter, slotX(g, k - state.cue - 1), 3, 600);
         ENT.anims.push(Qs.anims[Qs.anims.length - 1]);
       });
-    }, 700));
-    ENT.timers.push(setTimeout(function () { ENT.on = false; }, 1320));
+    }, 700 + d));
+    ENT.timers.push(setTimeout(function () { ENT.on = false; }, 1320 + d));
+  }
+
+  // ---------- the opening: LIGHTS UP on ink, once per browser session (tier 1) ----------
+  // A full-viewport ink overlay. The letters start as dark outlines and light solid host one at a
+  // time, 110ms apart, hold 300ms, then the overlay lifts (opacity, 350ms) and the wall entrance plays.
+  // About 2.7s in all. Any click, tap, key or scroll skips to the settled page. aria-hidden, never
+  // focusable, so focus is never trapped. ?shot=1, a hash or ?n= in the URL skip it.
+  var OP = { el: null, timers: [], evs: ["pointerdown", "keydown", "wheel", "touchstart", "scroll"] };
+  var OP_KEY = "intro:lights-up";
+  function opSeen() { try { return window.sessionStorage.getItem(OP_KEY) === "1"; } catch (e) { return false; } }
+  function opMark() { try { window.sessionStorage.setItem(OP_KEY, "1"); } catch (e) { /* plays once per load instead */ } }
+  function startOpening() {
+    if (SHOT) return;
+    if (opSeen() || location.hash.length > 1 || NAME_PARAM || !document.body.animate) { startEntrance(0); return; }
+    opMark();
+    var n = 0, rows = D.intro.lines.map(function (w) {
+      return '<span class="op-row">' + w.split("").map(function (c) { n++; return '<span class="op-l">' + esc(c) + "</span>"; }).join("") + "</span>";
+    }).join(" ");
+    document.body.insertAdjacentHTML("beforeend", '<div class="opening" id="opening" aria-hidden="true"><p class="op-big">' + rows + "</p></div>");
+    OP.el = $("opening");
+    opFit();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(opFit);
+    var L = OP.el.querySelectorAll(".op-l"), first = 120, step = 110, hold = first + (L.length - 1) * step + 300;
+    Array.prototype.forEach.call(L, function (l, k) { OP.timers.push(setTimeout(function () { l.classList.add("on"); }, first + k * step)); });
+    OP.timers.push(setTimeout(function () {
+      var a = OP.el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 350, easing: "ease-out", fill: "forwards" });
+      a.onfinish = opEnd;
+    }, hold));
+    startEntrance(hold + 200);
+    OP.evs.forEach(function (ev) { window.addEventListener(ev, skipOpening, { capture: true, passive: true }); });
+  }
+  // Narrow the width axis so each row of the big word fits the screen.
+  function opFit() {
+    if (!OP.el) return;
+    var big = OP.el.querySelector(".op-big"), cs = getComputedStyle(OP.el);
+    var avail = OP.el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var rows = big.querySelectorAll(".op-row");
+    for (var w = 100; w >= 50; w -= 2) {
+      big.style.fontStretch = w + "%";
+      var ok = big.getBoundingClientRect().width <= avail + 1;
+      for (var i = 0; i < rows.length; i++) if (rows[i].getBoundingClientRect().width > avail) ok = false;
+      if (ok) break;
+    }
+  }
+  function opEnd(keep) {
+    OP.timers.forEach(clearTimeout); OP.timers = [];
+    OP.evs.forEach(function (ev) { window.removeEventListener(ev, skipOpening, { capture: true }); });
+    var el = OP.el;
+    OP.el = null;
+    if (!el || !el.parentNode) return;
+    if (!keep) { el.remove(); return; }
+    // A press that skips: the overlay vanishes now but stays under the pointer until the press ends,
+    // so the same click never lands on a button underneath.
+    el.style.opacity = "0";
+    var gone = function () { if (el.parentNode) el.remove(); };
+    el.addEventListener("click", function () { setTimeout(gone, 0); });
+    setTimeout(gone, 700);
+  }
+  function skipOpening(e) {
+    if (!OP.el) return;
+    opEnd(e && (e.type === "pointerdown" || e.type === "touchstart"));
+    endEntrance();
   }
   function endEntrance() {
     if (!ENT.on) return;
@@ -622,18 +685,18 @@
   // ---------- sections ----------
   var R = {};
 
-  // House lights: a scroll-driven set piece (tier 1). The heading reads "Lights Up" once;
-  // the big letters are aria-hidden, the sentence and description are real text.
+  // About: a static ink band. The statement is the heading, its cue word in host.
   R.about = function () {
-    var a = D.about, n = 0;
-    var big = a.lines.map(function (w) {
-      return '<span class="hl-row">' + w.split("").map(function (c) { return '<span class="hl-l" data-i="' + (n++) + '">' + esc(c) + "</span>"; }).join("") + "</span>";
+    var a = D.about;
+    // One sentence per line.
+    var line = (a.line.match(/[^.!?]+[.!?]*/g) || [a.line]).map(function (t) {
+      var h = esc(t.trim());
+      if (a.highlight) h = h.replace(a.highlight, '<span class="ab-hi">' + esc(a.highlight) + "</span>");
+      return '<span class="ab-s">' + h + "</span>";
     }).join(" ");
-    var words = a.line.split(/\s+/).map(function (w) { return '<span class="hl-w">' + esc(w) + "</span>"; }).join(" ");
-    return '<section class="hl' + (SHOT ? " hl-static" : "") + '" id="about" aria-labelledby="about-title"><div class="hl-stage"><div class="wrap hl-inner">' +
-      '<h2 class="hl-title" id="about-title"><span class="sr">' + esc(a.heading) + '</span><span class="hl-big" aria-hidden="true">' + big + "</span></h2>" +
-      '<p class="hl-line">' + words + "</p>" +
-      '<p class="hl-desc">' + copy(a.description) + "</p></div></div></section>";
+    return '<section class="about" id="about" aria-labelledby="about-title"><div class="wrap ab-inner">' +
+      '<h2 class="ab-line" id="about-title">' + line + "</h2>" +
+      '<p class="ab-desc">' + copy(a.description) + "</p></div></section>";
   };
 
   R.speakers = function () {
@@ -1733,56 +1796,6 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // ---------- house lights ----------
-  // 0-25% of the scroll: paper to ink. 20-70%: letters light one per step. 65-85%: words appear.
-  // 88%: the description. Holds fully lit to the end. ?shot=1 renders the end state, no pinning.
-  var HL = { sec: null, lit: -1, words: -1, desc: null, raf: 0 };
-  var HL_PAPER = [247, 245, 239], HL_INK = [16, 18, 24];
-  function hlMix(a, b, t) { return "rgb(" + a.map(function (v, i) { return Math.round(v + (b[i] - v) * t); }).join(",") + ")"; }
-  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
-  function hlSet(p) {
-    var sec = HL.sec, stage = sec.querySelector(".hl-stage"), L = sec.querySelectorAll(".hl-l"), W = sec.querySelectorAll(".hl-w");
-    var t = clamp01(p / 0.25);
-    stage.style.backgroundColor = hlMix(HL_PAPER, HL_INK, t);
-    stage.style.color = hlMix(HL_INK, HL_PAPER, t);
-    var f = clamp01((p - 0.2) / 0.5), k = f >= 1 ? L.length : Math.floor(f * L.length);
-    if (k !== HL.lit) { HL.lit = k; for (var i = 0; i < L.length; i++) L[i].classList.toggle("on", i < k); }
-    var g = clamp01((p - 0.65) / 0.2), m = g >= 1 ? W.length : Math.floor(g * (W.length + 1));
-    if (m > W.length) m = W.length;
-    if (m !== HL.words) { HL.words = m; for (var j = 0; j < W.length; j++) W[j].classList.toggle("on", j < m); }
-    var d = p >= 0.88;
-    if (d !== HL.desc) { HL.desc = d; sec.classList.toggle("hl-done", d); }
-  }
-  function hlProgress() {
-    var r = HL.sec.getBoundingClientRect(), span = r.height - window.innerHeight;
-    return span > 0 ? clamp01(-r.top / span) : 1;
-  }
-  function hlTick() { HL.raf = 0; if (HL.sec) hlSet(hlProgress()); }
-  // Narrow the width axis so each row of the big word fits its container.
-  function hlFit() {
-    if (!HL.sec) return;
-    var big = HL.sec.querySelector(".hl-big"), box = HL.sec.querySelector(".hl-inner");
-    var cs = getComputedStyle(box), avail = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    var rows = big.querySelectorAll(".hl-row");
-    for (var w = 100; w >= 50; w -= 2) {
-      big.style.fontStretch = w + "%";
-      var ok = true;
-      for (var i = 0; i < rows.length; i++) if (rows[i].getBoundingClientRect().width > avail) ok = false;
-      if (big.getBoundingClientRect().width > avail + 1) ok = false;
-      if (ok) break;
-    }
-  }
-  function wireHouseLights() {
-    HL.sec = document.getElementById("about");
-    if (!HL.sec) return;
-    hlFit();
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(hlFit);
-    window.addEventListener("resize", function () { hlFit(); hlTick(); });
-    if (SHOT) { hlSet(1); return; }
-    window.addEventListener("scroll", function () { if (!HL.raf) HL.raf = requestAnimationFrame(hlTick); }, { passive: true });
-    hlTick();
-  }
-
   function renderChrome() {
     var m = D.meta, on = D.sections.filter(function (s) { return s.on && R[s.id]; });
     document.title = m.pageTitle || m.name;
@@ -1970,8 +1983,8 @@
       if (SHOT) state.cue = shotQ >= 1 && shotQ <= CUES.length ? shotQ - 1 : 0;
       renderHero();
       renderChrome(); markOnWall();
-      wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases(); wireHouseLights(); wireStage(); wireCurtain();
-      startEntrance();
+      wireWall(); wireTabs(); wireMatrix(); wireDrawer(); wireGlobal(); wirePhrases(); wireStage(); wireCurtain();
+      startOpening();
       applyNameParam();
       // ?shot=1&q=7&n=Name: the registrant is already on the wall as Q7, empty photo state.
       if (SHOT && shotQ === 7 && NAME_PARAM && VIS.joined) { cutTo(6, false); placeQueue(6); }

@@ -14,7 +14,11 @@
     "icsStamp": "20280101T000000Z",
     "footerLine": "Fictional event. Tarnell, Nave Carolina, and every person and company here are invented.",
     "icsLocation": "Nave Carolina, Quito, Ecuador",
-    "credit": { "text": "Design and build by", "name": "Justin Parker", "href": "https://justinrparker.com" }
+    "credit": {
+      "text": "Design and build by",
+      "name": "Justin Parker",
+      "href": "https://justinrparker.com"
+    }
   },
   "sections": [
     {
@@ -96,10 +100,15 @@
       "href": "#register"
     }
   },
+  "intro": {
+    "lines": [
+      "LIGHTS",
+      "UP"
+    ]
+  },
   "about": {
-    "heading": "Lights Up",
-    "lines": ["LIGHTS", "UP"],
     "line": "Six keynotes. Six customers. You call the cues.",
+    "highlight": "cues",
     "description": "Lights Up '28 is Tarnell's free customer conference, and every main-stage keynote is given by a customer who runs something live."
   },
   "tracks": [

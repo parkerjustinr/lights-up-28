@@ -17,7 +17,7 @@
   --called: color-mix(in srgb, var(--ink) 70%, var(--host)); /* called cues: dimmed but still 5.6:1 on the wall */
   --dim-on-ink: #9C9C9A;    /* secondary text on ink (stage floor, Say it in Quito steps), 7:1 on ink */
   --muted: #4A4D57;        /* secondary text, 7:1 on paper */
-  --hl-off: #2A2D36;      /* house lights: unlit letter outline only */
+  --ink-line: #2A2D36;    /* dark lines on ink: unlit opening letters, the stage curtain folds, floor planks and panel shadows */
   --focus: var(--ink);
 
   /* Old kit names, kept so nothing reads an undefined token. */
@@ -247,29 +247,22 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
 .lede { font-size: 1.15rem; max-width: 60ch; }
 .note { font-size: 0.95rem; color: var(--muted); }
 
-/* About: one big statement, one short paragraph set off to the right. */
-/* House lights: a 240vh (190vh phones) container with a sticky 100vh stage. app.js sets the
-   stage colors and lights letters and words from the scroll position. Tier 1. */
-section.hl { position: relative; height: 240vh; scroll-margin-top: 0; }
-.hl-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; align-items: center; background: var(--paper); color: var(--ink); }
-.hl-inner { width: 100%; max-width: none; padding: var(--bar) var(--wall-pad) 0; }
-.hl-title { margin: 0 0 28px; }
-.hl-big { display: inline-block; font-size: 21vw; line-height: 0.86; font-stretch: 70%; letter-spacing: -0.01em; white-space: nowrap; margin-left: -0.04em; }
-.hl-row { display: inline-block; }
-.hl-l { color: transparent; -webkit-text-stroke: max(2px, 0.012em) var(--hl-off); }
-.hl-l.on { color: var(--host); -webkit-text-stroke-color: var(--host); }
-.hl-line { font-family: var(--display); font-weight: 800; font-size: clamp(1.6rem, 3.6vw, 3.25rem); line-height: 1.05; max-width: 24ch; margin: 0 0 18px; }
-.hl-w { opacity: 0; }
-.hl-w.on { opacity: 1; }
-.hl-desc { max-width: 58ch; font-size: 1.15rem; margin: 0; opacity: 0; }
-.hl-done .hl-desc { opacity: 1; }
-section.hl.hl-static { height: auto; }
-.hl-static .hl-stage { position: relative; height: 100vh; }
-@media (max-width: 719px) {
-  section.hl { height: 190vh; }
-  .hl-big { font-size: 27vw; line-height: 0.84; }
-  .hl-row { display: block; }
-}
+/* About: a static ink band. The statement is the heading, its cue word in host. */
+.about { background: var(--ink); color: var(--paper); padding: 72px 0 80px; }
+.ab-inner { display: grid; gap: 24px; }
+.ab-line { font-size: clamp(2.2rem, 8.4vw, 5.4rem); font-stretch: 96%; line-height: 0.95; letter-spacing: -0.01em; margin: 0; }
+.ab-s { display: block; white-space: nowrap; }
+.ab-hi { color: var(--host); }
+.ab-desc { max-width: 52ch; font-size: 1.2rem; margin: 0; }
+@media (min-width: 1200px) { .ab-inner { grid-template-columns: auto minmax(0, 32ch); align-items: end; column-gap: 48px; } .ab-desc { padding-bottom: 8px; } }
+
+/* The opening: LIGHTS UP on a full-viewport ink overlay, once per browser session (app.js startOpening). Tier 1. */
+.opening { position: fixed; inset: 0; z-index: 300; background: var(--ink); display: flex; align-items: center; padding: 0 var(--wall-pad); overflow: hidden; }
+.op-big { margin: 0; font-family: var(--display); font-weight: 800; font-size: 18vw; line-height: 0.86; font-stretch: 70%; letter-spacing: -0.01em; white-space: nowrap; margin-left: -0.04em; }
+.op-row { display: inline-block; }
+.op-l { color: transparent; -webkit-text-stroke: max(2px, 0.012em) var(--ink-line); }
+.op-l.on { color: var(--host); -webkit-text-stroke-color: var(--host); }
+@media (max-width: 719px) { .op-big { font-size: 26vw; line-height: 0.84; } .op-row { display: block; } }
 
 /* ---------- speakers: a cue sheet of six, then The Booth ---------- */
 .sp-group { font-family: var(--mono); font-weight: 500; font-size: 1rem; margin: 28px 0 12px; padding-top: 10px; border-top: var(--rule); }
