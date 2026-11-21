@@ -1705,6 +1705,11 @@
   function wireStage() {
     var list = document.querySelector("#speakers .st-panels");
     if (!list) return;
+    list.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-wall-cue]");
+      if (b) cueOnWall(+b.getAttribute("data-wall-cue"));
+    });
+    if (SHOT) return; // no spotlight in ?shot=1 (no hover or focus styling)
     Array.prototype.forEach.call(list.querySelectorAll(".st-panel"), function (p) {
       p.addEventListener("pointerenter", function (e) { if (e.pointerType === "mouse") spotOn(p); });
       p.addEventListener("focusin", function () { spotOn(p); });
@@ -1715,10 +1720,6 @@
     list.addEventListener("focusout", function (e) { if (!list.contains(e.relatedTarget)) spotOn(null); });
     document.addEventListener("click", function (e) { if (SPOT.on && !list.contains(e.target)) spotOn(null); });
     window.addEventListener("resize", function () { var p = SPOT.on; if (p) { SPOT.on = null; spotOn(p); } });
-    list.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-wall-cue]");
-      if (b) cueOnWall(+b.getAttribute("data-wall-cue"));
-    });
   }
   // Cue on the wall: back to the top (smooth unless reduced motion), then the cue-button jump.
   function cueOnWall(i) {

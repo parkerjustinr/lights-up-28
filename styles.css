@@ -310,7 +310,7 @@ section.hl.hl-static { height: auto; }
 .st-cue { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0 0 6px; }
 .st-photo { aspect-ratio: 3 / 4; transition: filter 200ms ease-out; }
 .st-panels.has-spot .st-panel:not(.is-spot) .st-photo { filter: brightness(0.55); }
-.st-info { position: relative; color: var(--paper); padding: 28px 0 22px; display: flex; flex-direction: column; }
+.st-info { position: relative; background: var(--ink); color: var(--paper); padding: 28px 0 22px; display: flex; flex-direction: column; }
 .st-floor ~ .st-panels .st-info::before { display: none; }
 .st-name { font-size: 1.2rem; font-stretch: 100%; line-height: 1.05; margin: 0 0 6px; }
 .st-role { font-weight: 700; font-size: 0.9rem; line-height: 1.3; margin: 0 0 4px; }
