@@ -190,7 +190,7 @@
     return c.cue + " · " + day + " " + fmtTime(t) + " " + tzShort(tz, t) + (tr ? " · " + tr.name : "");
   }
 
-  // ---------- stage: the wall and the walk-up card share this ----------
+  // ---------- stage: the wall and the program monitor share this ----------
   function nameHtml(full) {
     var n = splitName(full);
     return '<span class="nm">' + esc(n.first) + "</span>" + (n.last ? ' <span class="nm">' + esc(n.last) + "</span>" : "");

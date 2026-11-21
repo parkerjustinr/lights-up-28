@@ -81,7 +81,6 @@
     "standby": "STBY",
     "live": "live",
     "agendaLink": "See in agenda",
-    "saveLabel": "Save card",
     "standbyLong": "standby",
     "called": "called",
     "you": {
@@ -772,7 +771,6 @@
     "try": "Record",
     "record": "Record",
     "listening": "Recording. Say the phrase, then tap Stop.",
-    "recording": "Recording. Say the phrase, then tap Stop.",
     "playing": "Playing your clip, then the voice.",
     "heard": "It heard:",
     "nailed": "Nailed it.",
@@ -806,22 +804,14 @@
     ]
   },
   "registration": {
-    "heading": "Register",
-    "intro": "Free for Tarnell customers. Takes a minute.",
-    "demoNotice": "Demo form. Nothing is sent anywhere.",
-    "submitLabel": "Register",
     "card": {
-      "label": "WALK-UP",
-      "demoLine": "Demo only. Nothing was sent.",
       "saveLabel": "Save card",
       "againLabel": "Register someone else",
       "photo": {
-        "empty": "You're on after Q6.",
         "take": "Take a photo",
         "upload": "Upload a photo",
         "snap": "Snap",
         "cancel": "Cancel",
-        "privacy": "Your photo stays in this browser tab, in memory only, and is never sent anywhere.",
         "denied": "Camera access was blocked. You can still upload a photo.",
         "none": "No camera found here. You can still upload a photo.",
         "bad": "That file didn't open as an image. Try another one.",
@@ -832,7 +822,6 @@
         "retake": "Retake",
         "labelShot": "Your photo, before you use it"
       },
-      "join": "Join the queue",
       "calendar": "Add to calendar"
     },
     "shotDefaults": {
