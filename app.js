@@ -1803,7 +1803,8 @@
     $("footer").innerHTML = '<div class="wrap footer-inner"><p class="footer-word">' + esc(m.host) + "</p>" +
       '<nav aria-label="Footer"><ul class="footer-links">' + navOn.map(function (s) { return '<li><a href="#' + s.id + '">' + esc(s.label) + "</a></li>"; }).join("") + "</ul></nav>" +
       '<p class="footer-small mono">' + esc(m.name) + " · " + esc(m.dateLine) + "</p>" +
-      '<p class="footer-small">' + esc(m.footerLine || "") + "</p></div>";
+      '<p class="footer-small">' + esc(m.footerLine || "") + "</p>" +
+      (m.credit ? '<p class="footer-small">' + esc(m.credit.text) + ' <a href="' + esc(m.credit.href) + '">' + esc(m.credit.name) + "</a></p>" : "") + "</div>";
   }
 
   // ---------- save card: 1200x630 PNG via canvas ----------

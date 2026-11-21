@@ -13,7 +13,8 @@
     "description": "Lights Up '28, Tarnell's free customer conference for operations leaders: Apr 11-12, 2028 · Nave Carolina, Quito, Ecuador. Six customers give the keynotes, and you call the cues.",
     "icsStamp": "20280101T000000Z",
     "footerLine": "Fictional event. Tarnell, Nave Carolina, and every person and company here are invented.",
-    "icsLocation": "Nave Carolina, Quito, Ecuador"
+    "icsLocation": "Nave Carolina, Quito, Ecuador",
+    "credit": { "text": "Design and build by", "name": "Justin Parker", "href": "https://justinrparker.com" }
   },
   "sections": [
     {
