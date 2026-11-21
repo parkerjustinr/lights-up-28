@@ -729,6 +729,74 @@
       '<p class="ab-desc">' + copy(a.description) + "</p></div></section>";
   };
 
+  // The theatre frame around the Stage: ink curtain legs with fold lines, a valance with a scalloped
+  // edge, the floor in perspective (drawn by stageFrame from the real layout), footlights along the
+  // front lip, and a row of audience silhouettes in the foreground. Flat shapes only.
+  var AUD_SHAPES = (function () {
+    // A single row of head-and-shoulders, each a little different: height, hair, one cap.
+    var out = [], hair = ["", "bun", "", "curls", "pony", "", "cap", "", "bun", "", "curls", "", "pony", "", "", "bun", "", "curls", "", "pony", "", ""];
+    for (var i = 0; i < 22; i++) {
+      var cx = 38 + i * 73, lift = [0, 6, 2, 9, 4, 1, 7, 3, 10, 5, 0, 8, 2, 6, 4, 9, 1, 7, 3, 5, 8, 2][i], r = 14 + (i * 7) % 4;
+      var top = 46 - lift, head = top - r + 3, h = hair[i], g = "";
+      g += '<path d="M' + (cx - 33) + ' 80C' + (cx - 33) + " " + (top + 8) + " " + (cx - 20) + " " + top + " " + cx + " " + top + "C" + (cx + 20) + " " + top + " " + (cx + 33) + " " + (top + 8) + " " + (cx + 33) + ' 80Z"/>';
+      g += '<circle cx="' + cx + '" cy="' + head + '" r="' + r + '"/>';
+      if (h === "bun") g += '<circle cx="' + cx + '" cy="' + (head - r - 3) + '" r="6"/>';
+      if (h === "curls") g += '<circle cx="' + (cx - r + 3) + '" cy="' + (head - r + 5) + '" r="7"/><circle cx="' + cx + '" cy="' + (head - r + 1) + '" r="7"/><circle cx="' + (cx + r - 3) + '" cy="' + (head - r + 5) + '" r="7"/>';
+      if (h === "pony") g += '<ellipse cx="' + (cx + r + 2) + '" cy="' + (head + 4) + '" rx="5" ry="10"/>';
+      if (h === "cap") g += '<path d="M' + (cx - r - 1) + " " + (head - 1) + "A" + (r + 1) + " " + (r + 1) + " 0 0 1 " + (cx + r + 1) + " " + (head - 1) + "H" + (cx + r + 12) + "V" + (head + 3) + "H" + (cx - r - 1) + 'Z"/>';
+      out.push("<g>" + g + "</g>");
+    }
+    return out.join("");
+  })();
+  function stageFrameHtml(panels) {
+    var leg = '<svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false"><rect width="100" height="100"/>' +
+      '<line x1="25" y1="0" x2="25" y2="100"/><line x1="50" y1="0" x2="50" y2="100"/><line x1="75" y1="0" x2="75" y2="100"/></svg>';
+    var lamps = "";
+    for (var i = 0; i < 22; i++) lamps += "<i></i>";
+    return '<div class="st-theatre" id="st-theatre">' +
+      '<div class="st-cone" aria-hidden="true"></div>' +
+      '<div class="st-valance" aria-hidden="true"><svg class="st-scallops" focusable="false"><defs><pattern id="st-scallop" width="40" height="16" patternUnits="userSpaceOnUse">' +
+        '<path d="M0 0H40V1A20 15 0 0 1 0 1Z"/></pattern></defs><rect width="100%" height="100%" fill="url(#st-scallop)"/></svg></div>' +
+      '<div class="st-leg st-leg-l" aria-hidden="true">' + leg + '</div><div class="st-leg st-leg-r" aria-hidden="true">' + leg + "</div>" +
+      '<div class="st-grid">' +
+        '<div class="st-floor" aria-hidden="true"><svg class="st-floor-svg" focusable="false"></svg></div>' +
+        '<div class="st-apron" aria-hidden="true"><span class="st-lights">' + lamps + "</span></div>" +
+        '<ul class="st-panels">' + panels + "</ul>" +
+        '<div class="st-audience" aria-hidden="true"><svg viewBox="0 0 1600 80" preserveAspectRatio="xMidYMax slice" focusable="false">' + AUD_SHAPES + "</svg></div>" +
+      "</div></div>";
+  }
+  // The wide stage (one row of six): from 1040px with a fine pointer. Matches the CSS.
+  var WIDE_STAGE = "(min-width: 1040px) and (hover: hover), (min-width: 1040px) and (pointer: fine)";
+  function wideStage() { return window.matchMedia(WIDE_STAGE).matches; }
+  // Draw the floor from the real layout: the back edge under the panels, the front edge between the
+  // curtain legs, plank lines converging toward the back. The legs reach down to the front edge.
+  function stageFrame() {
+    var th = $("st-theatre");
+    if (!th) return;
+    var floor = th.querySelector(".st-floor"), svg = floor.querySelector("svg"), photos = th.querySelectorAll(".st-photo");
+    var fr = floor.getBoundingClientRect(), tr = th.getBoundingClientRect();
+    var L = th.querySelector(".st-leg-l").getBoundingClientRect(), Rr = th.querySelector(".st-leg-r").getBoundingClientRect();
+    var W = fr.width, H = fr.height;
+    if (!W || !H || !photos.length) return;
+    var fl = L.right - fr.left, frr = Rr.left - fr.left, bl, br;
+    if (wideStage()) {
+      bl = photos[0].getBoundingClientRect().left - fr.left - 8;
+      br = photos[photos.length - 1].getBoundingClientRect().right - fr.left + 8;
+    } else {
+      var inset = (frr - fl) * 0.1;
+      bl = fl + inset; br = frr - inset;
+    }
+    var n = 12, lines = "";
+    for (var k = 1; k < n; k++) {
+      lines += '<line x1="' + (fl + (frr - fl) * k / n).toFixed(1) + '" y1="' + H + '" x2="' + (bl + (br - bl) * k / n).toFixed(1) + '" y2="0"/>';
+    }
+    svg.setAttribute("viewBox", "0 0 " + W.toFixed(1) + " " + H.toFixed(1));
+    svg.innerHTML = '<polygon points="' + bl.toFixed(1) + ",0 " + br.toFixed(1) + ",0 " + frr.toFixed(1) + "," + H + " " + fl.toFixed(1) + "," + H + '"/>' + lines;
+    var legH = Math.round(fr.bottom - tr.top) + "px";
+    th.querySelector(".st-leg-l").style.height = legH;
+    th.querySelector(".st-leg-r").style.height = legH;
+  }
+
   R.speakers = function () {
     var sp = D.speakers, map = speakerSessions();
     function first(id) { return (map[id] || [])[0]; }
@@ -742,7 +810,8 @@
       var f = first(p.id);
       return f ? '<a class="sp-agenda" href="#session-' + esc(f.s.id) + '" aria-label="' + esc(sp.agendaLink + ": " + p.name) + '">' + esc(sp.agendaLink) + "</a>" : "";
     }
-    // The Stage: a 3:4 portrait panel per keynote, standing on an ink floor band.
+    // The Stage: a 3:4 portrait panel per keynote, standing on the back edge of the stage floor, its
+    // name, role, company and city on a paper placard hanging from the front lip under it.
     function panel(p) {
       var f = first(p.id), ci = CUES.findIndex(function (c) { return c.sp && c.sp.id === p.id; });
       return '<li class="st-panel" id="speaker-' + p.id + '">' +
@@ -750,9 +819,10 @@
         '<div class="st-photo duo">' + (p.photo
           ? '<img src="' + esc(img(p.photo, 480, 640)) + '" alt="" width="480" height="640" loading="' + imgLoading(false) + '">'
           : '<span class="sp-initials" aria-hidden="true">' + esc(initials(p.name)) + "</span>") + "</div>" +
-        '<div class="st-info"><h3 class="st-name">' + esc(p.name) + '</h3><p class="st-role">' + esc(p.role) + '</p><p class="st-co">' + esc(p.company) + "</p>" +
+        '<span class="st-shadow" aria-hidden="true"></span>' +
+        '<div class="st-plac"><div class="st-card"><h3 class="st-name">' + esc(p.name) + '</h3><p class="st-role">' + esc(p.role) + '</p><p class="st-co">' + esc(p.company) + "</p>" +
         (p.place ? '<p class="st-co">' + esc(p.place) + "</p>" : "") +
-        '<p class="st-links">' + link(p) + (ci > -1 ? '<button type="button" class="st-wall" data-wall-cue="' + ci + '" aria-label="' + esc(sp.wallLink + ": " + p.name) + '">' + esc(sp.wallLink) + "</button>" : "") + "</p></div></li>";
+        '<p class="st-links">' + link(p) + (ci > -1 ? '<button type="button" class="st-wall" data-wall-cue="' + ci + '" aria-label="' + esc(sp.wallLink + ": " + p.name) + '">' + esc(sp.wallLink) + "</button>" : "") + "</p></div></div></li>";
     }
     function row(p) {
       return '<li class="sp-row" id="speaker-' + p.id + '">' + photo(p, 160, 160) +
@@ -761,11 +831,11 @@
     var keynote = sp.items.filter(function (p) { var f = first(p.id); return f && f.s.cue; });
     keynote.sort(function (a, b) { return parseInt(first(a.id).s.cue.slice(1), 10) - parseInt(first(b.id).s.cue.slice(1), 10); });
     var others = sp.items.filter(function (p) { return keynote.indexOf(p) < 0; });
-    return '<section class="section sec-speakers" id="speakers" aria-labelledby="speakers-title"><div class="st-cone" aria-hidden="true"></div>' +
+    return '<section class="section sec-speakers" id="speakers" aria-labelledby="speakers-title">' +
       '<div class="wrap"><h2 class="section-title" id="speakers-title">' + copy(sp.heading) + "</h2>" +
       (sp.intro ? '<p class="lede">' + copy(sp.intro) + "</p>" : "") +
       '<h3 class="sp-group">' + esc(sp.keynoteHeading) + "</h3></div>" +
-      '<div class="st-grid"><div class="st-floor" aria-hidden="true"></div><ul class="st-panels">' + keynote.map(panel).join("") + "</ul></div>" +
+      stageFrameHtml(keynote.map(panel).join("")) +
       '<div class="wrap"><h3 class="sp-group">' + esc(sp.boothHeading) + '</h3><ul class="sp-booth">' + others.map(row).join("") + "</ul></div></section>";
   };
 
@@ -1830,21 +1900,21 @@
   // focused or tapped panel in 200ms; the other panels dim. One at a time.
   var SPOT = { on: null };
   function spotOn(p) {
-    var sec = $("speakers"), cone = sec && sec.querySelector(".st-cone"), list = sec && sec.querySelector(".st-panels");
+    var th = $("st-theatre"), cone = th && th.querySelector(".st-cone"), list = th && th.querySelector(".st-panels");
     if (!cone || SPOT.on === p) return;
     if (SPOT.on) SPOT.on.classList.remove("is-spot");
     SPOT.on = p;
     if (!p) { list.classList.remove("has-spot"); cone.classList.remove("on"); return; }
     p.classList.add("is-spot"); list.classList.add("has-spot");
-    var sr = sec.getBoundingClientRect(), ph = p.querySelector(".st-photo").getBoundingClientRect();
-    var floor = sec.querySelector(".st-floor"), wide = floor && getComputedStyle(floor).display !== "none";
-    var gt = sec.querySelector(".st-grid").getBoundingClientRect().top - sr.top;
-    var top = wide ? gt : Math.max(gt, p.getBoundingClientRect().top - sr.top - 20);
+    // The cone drops from the valance (wide stage), or from just above the panel when the panels stack.
+    var tr = th.getBoundingClientRect(), ph = p.querySelector(".st-photo").getBoundingClientRect();
+    var vb = th.querySelector(".st-valance").getBoundingClientRect().bottom - tr.top - 2;
+    var top = wideStage() ? vb : Math.max(vb, p.getBoundingClientRect().top - tr.top - 20);
     var w = ph.width * 1.24;
-    cone.style.left = (ph.left - sr.left + ph.width / 2 - w / 2) + "px";
+    cone.style.left = (ph.left - tr.left + ph.width / 2 - w / 2) + "px";
     cone.style.width = w + "px";
     cone.style.top = top + "px";
-    cone.style.height = (ph.bottom - sr.top - top) + "px";
+    cone.style.height = (ph.bottom - tr.top - top) + "px";
     cone.classList.remove("on");
     void cone.offsetWidth;
     cone.classList.add("on");
@@ -1852,6 +1922,10 @@
   function wireStage() {
     var list = document.querySelector("#speakers .st-panels");
     if (!list) return;
+    stageFrame();
+    window.addEventListener("resize", stageFrame);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(stageFrame);
+    Array.prototype.forEach.call(list.querySelectorAll("img"), function (im) { if (!im.complete) im.addEventListener("load", stageFrame); });
     list.addEventListener("click", function (e) {
       var b = e.target.closest("[data-wall-cue]");
       if (b) cueOnWall(+b.getAttribute("data-wall-cue"));

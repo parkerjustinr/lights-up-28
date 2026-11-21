@@ -286,41 +286,79 @@ html:not([data-shot]) .stage-save:hover { background: var(--on-host); color: var
 .sp-agenda { font-weight: 700; font-size: 0.95rem; text-underline-offset: 3px; margin-top: auto; }
 @media (min-width: 1040px) { .sp-booth { max-width: 880px; } }
 
-/* The Stage: six 3:4 portrait panels on an ink floor band (shared band from 1040px with a fine
-   pointer; each panel gets its own floor on phones, tablets and touch). The spotlight cone is a
-   flat clip-path trapezoid in host at 30% over paper, behind the content. Tier 1. */
+/* The Stage: six 3:4 portrait panels in a flat theatre frame. Ink curtain legs with fold lines, a
+   valance with a scalloped edge, the floor in perspective (app.js stageFrame draws it from the layout),
+   footlights on the front lip, paper placards hanging under each panel, audience silhouettes in front.
+   One row of six from 1040px with a fine pointer; 2 columns (3 from 640px with a mouse) inside the
+   same frame otherwise. The spotlight cone (host 30% over paper, behind the content) drops from the
+   valance. Tier 1. */
 .sec-speakers { position: relative; isolation: isolate; overflow: clip; }
-.sec-speakers > .wrap, .st-grid { position: relative; z-index: 1; }
+.sec-speakers > .wrap { position: relative; z-index: 1; }
+.st-theatre { --leg: clamp(56px, 6vw, 96px); --val: 44px; --depth: 56px; --aud: 72px; position: relative; isolation: isolate; padding-top: calc(var(--val) + 30px); margin-bottom: 8px; }
+.st-valance { position: absolute; z-index: 4; left: 0; right: 0; top: 0; height: var(--val); background: var(--ink); }
+.st-scallops { position: absolute; left: 0; top: 100%; width: 100%; height: 16px; display: block; }
+.st-scallops path { fill: var(--ink); }
+.st-leg { position: absolute; z-index: 3; top: 0; width: var(--leg); height: 100%; }
+.st-leg-l { left: 0; }
+.st-leg-r { right: 0; }
+.st-leg svg { display: block; width: 100%; height: 100%; }
+.st-leg rect { fill: var(--ink); }
+.st-leg line { stroke: var(--ink-line); stroke-width: 3px; vector-effect: non-scaling-stroke; }
 .st-cone { position: absolute; z-index: 0; top: 0; left: 0; width: 0; height: 0; pointer-events: none;
   background: color-mix(in srgb, var(--host) 30%, var(--paper));
   clip-path: polygon(38% 0, 62% 0, 62% 0, 38% 0); visibility: hidden; }
 .st-cone.on { visibility: visible; clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); transition: clip-path 200ms ease-out; }
-.st-grid { display: grid; grid-template-columns: minmax(0, 1fr) repeat(6, minmax(0, 178px)) minmax(0, 1fr); column-gap: 16px; grid-template-rows: auto auto auto; margin-bottom: 8px; }
-.st-floor { grid-column: 1 / -1; grid-row: 3; background: var(--ink); position: relative; }
-.st-floor::before, .st-info::before { content: ""; position: absolute; left: 0; right: 0; top: 12px; height: 2px; background: var(--paper); }
-.st-panels { grid-column: 2 / -2; grid-row: 1 / 4; display: grid; grid-template-columns: subgrid; grid-template-rows: subgrid; }
-.st-panel { grid-row: span 3; display: grid; grid-template-rows: subgrid; }
-.st-cue { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0 0 6px; }
-.st-photo { aspect-ratio: 3 / 4; transition: filter 200ms ease-out; }
+.st-grid { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(calc(var(--leg) + 16px), 1fr) repeat(6, minmax(0, 160px)) minmax(calc(var(--leg) + 16px), 1fr);
+  column-gap: 16px; grid-template-rows: auto auto var(--depth) 30px auto var(--aud); }
+.st-floor { grid-column: 1 / -1; grid-row: 3; position: relative; }
+.st-floor-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.st-floor-svg polygon { fill: var(--ink); }
+.st-floor-svg line { stroke: var(--ink-line); stroke-width: 1.5px; }
+.st-apron { grid-column: 1 / -1; grid-row: 4 / 6; background: var(--ink); }
+.st-lights { display: flex; justify-content: space-around; align-items: center; height: 30px; padding: 0 var(--leg); }
+.st-lights i { width: 14px; height: 14px; border-radius: 50%; background: var(--host); position: relative; flex: 0 0 auto; }
+.st-lights i::after { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--paper); }
+.st-panels { grid-column: 2 / -2; grid-row: 1 / 6; display: grid; grid-template-columns: subgrid; grid-template-rows: subgrid; }
+.st-panel { grid-row: span 5; display: grid; grid-template-rows: subgrid; position: relative; }
+.st-cue { font-family: var(--mono); font-weight: 500; font-size: 1.1rem; margin: 0 0 6px; position: relative; z-index: 1; }
+.st-photo { aspect-ratio: 3 / 4; transition: filter 200ms ease-out; position: relative; z-index: 1; }
 .st-panels.has-spot .st-panel:not(.is-spot) .st-photo { filter: brightness(0.55); }
-.st-info { position: relative; background: var(--ink); color: var(--paper); padding: 28px 0 22px; display: flex; flex-direction: column; }
-.st-floor ~ .st-panels .st-info::before { display: none; }
-.st-name { font-size: 1.2rem; font-stretch: 100%; line-height: 1.05; margin: 0 0 6px; }
-.st-role { font-weight: 700; font-size: 0.9rem; line-height: 1.3; margin: 0 0 4px; }
-.st-co { color: var(--dim-on-ink); font-size: 0.9rem; line-height: 1.3; margin: 0; }
-.st-links { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: auto 0 0; padding-top: 12px; }
-.st-links a, .st-wall { color: var(--paper); font: 700 0.9rem/1.3 var(--body); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; background: none; border: 0; padding: 2px 0; cursor: pointer; text-align: left; }
+.st-shadow { grid-row: 3; align-self: start; justify-self: center; width: 86%; height: 14px; margin-top: -7px; border-radius: 50%; background: var(--ink-line); }
+/* Placards: paper cards hanging on two strings from the front lip. */
+.st-plac { grid-row: 5; position: relative; padding: 14px 0 18px; display: flex; }
+.st-plac::before, .st-plac::after { content: ""; position: absolute; top: 0; width: 2px; height: 14px; background: var(--paper); }
+.st-plac::before { left: 18%; }
+.st-plac::after { right: 18%; }
+.st-card { flex: 1; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); padding: 10px 10px 12px; display: flex; flex-direction: column; }
+.st-name { font-size: 1.15rem; font-stretch: 100%; line-height: 1.05; margin: 0 0 6px; }
+.st-role { font-weight: 700; font-size: 0.86rem; line-height: 1.3; margin: 0 0 4px; }
+.st-co { color: var(--muted); font-size: 0.86rem; line-height: 1.3; margin: 0; }
+.st-links { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin: auto 0 0; padding-top: 10px; }
+.st-links a, .st-wall { color: var(--ink); font: 700 0.86rem/1.3 var(--body); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; background: none; border: 0; padding: 2px 0; cursor: pointer; text-align: left; }
 .st-links a:hover, .st-wall:hover { text-decoration-thickness: 2px; }
-.st-links a:focus-visible, .st-wall:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+.st-links a:focus-visible, .st-wall:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+/* The audience: ink silhouettes with a paper edge, straddling the bottom of the stage front. */
+.st-audience { grid-column: 1 / -1; grid-row: 6; position: relative; z-index: 2; }
+.st-audience::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 26%; background: var(--ink); z-index: -1; }
+.st-audience svg { display: block; width: 100%; height: 100%; }
+.st-audience g { fill: var(--ink); stroke: var(--paper); stroke-width: 2px; paint-order: stroke; }
 @media (max-width: 1039px), (hover: none) and (pointer: coarse) {
-  .st-grid { display: block; padding: 0 var(--gutter); max-width: var(--max); margin: 0 auto 8px; }
-  .st-floor { display: none; }
-  .st-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; gap: 20px 12px; }
+  .st-theatre { --leg: 14px; --val: 28px; --depth: 40px; --aud: 50px; padding: calc(var(--val) + 26px) calc(var(--leg) + 10px) 0; }
+  .st-scallops { height: 12px; }
+  .st-leg line { stroke-width: 2px; }
+  .st-grid { display: flex; flex-direction: column; }
+  .st-panels { order: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; gap: 22px 12px; max-width: 760px; width: 100%; margin: 0 auto; }
   .st-panel { grid-row: auto; display: flex; flex-direction: column; }
-  .st-info { flex: 1; background: var(--ink); padding: 24px 12px 14px; }
-  .st-floor ~ .st-panels .st-info::before { display: block; }
-  .st-info::before { top: 10px; }
+  .st-shadow { margin: -7px auto 0; height: 12px; }
+  .st-plac { padding: 8px 0 0; flex: 1; }
+  .st-plac::before, .st-plac::after { display: none; }
+  .st-floor { order: 2; height: var(--depth); margin: 22px -10px 0; }
+  .st-apron { order: 3; margin: 0 -10px; }
+  .st-lights { padding: 0 8px; height: 26px; }
+  .st-lights i:nth-child(n+11) { display: none; }
+  .st-audience { order: 4; height: var(--aud); margin: 0 calc(-1 * (var(--leg) + 10px)); }
 }
+@media (min-width: 640px) and (max-width: 1039px) { .st-theatre { --leg: 26px; } .st-lights i:nth-child(n+11) { display: block; } .st-lights i:nth-child(n+17) { display: none; } }
 @media (min-width: 640px) and (max-width: 1039px) and (hover: hover) { .st-panels { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ---------- schedule ---------- */
